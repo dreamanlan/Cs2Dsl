@@ -1,6 +1,6 @@
 # Cs2Dsl
 CSharp代码转dsl，一个经由Cs2Lua来的实验项目，用于研究将C#语言转换为一个通用的中间语言，在此基础上能够比较方便的翻译为不同的目标语言。
-中间语言使用我的另一个开源项目Dsl【https://github.com/dreamanlan/DSL】，是一种通用的领域特定语言及其解析器。
+中间语言使用我的另一个开源项目Dsl【 https://github.com/dreamanlan/DSL 】，是一种通用的领域特定语言及其解析器。
 
 【命令行】
 
