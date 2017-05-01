@@ -1,0 +1,78 @@
+<html>
+	<head>
+		<script language="javascript">
+			function require(file){
+			}
+			function getParams(args, start){
+				var arr = new Array();
+				for(var i=start;i<args.length;++i){
+					arr.push(args[i]);
+				}
+				return arr;
+			}
+			function newobject(classObj, initFunc, doInit){
+				var args = getParams(3);
+				var obj = new classObj();
+				if(null != initFunc){
+					obj[initFunc](args);
+				}
+				return obj;
+			}
+			function JsConsole(){
+			}
+			(function(){
+				var points = new Array();
+				JsConsole.Print = function(){
+					var x = arguments[0];
+					var y = arguments[1];		
+					points.push(new Array(x,y));
+					window.setTimeout(function(){JsConsole.drawPoint(x,y);}, 0);
+				}
+				JsConsole.drawPoint = function(x,y){
+					var obj = document.getElementById("infoArea");
+					var ctx = obj.getContext('2d');
+					var w = obj.width;
+					var h = obj.height;
+          ctx.beginPath();
+          ctx.lineWidth = "3";
+          ctx.strokeStyle = "blue";
+          ctx.fillStyle = "red";
+					//ctx.ellipse(x*w, y*h, 5, 5, 0, 0, Math.PI*2, true);
+					ctx.arc(x*w, y*h, 5, 0, Math.PI*2, true);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+				}
+				JsConsole.redraw = function(){
+					var obj = document.getElementById("infoArea");
+					var ctx = obj.getContext('2d');
+					var w = obj.width;
+					var h = obj.height;
+					ctx.clearRect(0, 0, w, h);
+					for(var i in points){
+						var x = points[i][0];
+						var y = points[i][1];
+	          ctx.beginPath();
+	          ctx.lineWidth = "3";
+	          ctx.strokeStyle = "blue";
+	          ctx.fillStyle = "red";
+						//ctx.ellipse(x*w, y*h, 5, 5, 0, 0, Math.PI*2, true);
+						ctx.arc(x*w, y*h, 5, 0, Math.PI*2, true);
+	          ctx.closePath();
+	          ctx.fill();
+	          ctx.stroke();
+	        }
+				}				
+			})();
+		</script>
+		<script src="Mandelbrot.js"></script>
+	</head>
+	<body>
+		<canvas id="infoArea" style="width:800px;height:800px" width="800" height="800">
+		</canvas>
+		<script language="javascript">
+			Mandelbrot.Test();
+			//JsConsole.redraw();
+		</script>
+	</body>
+</html>

@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A45F7BB4-96F8-4A99-B37F-4EF15B082E14}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>RoslynTool</RootNamespace>
+    <AssemblyName>Cs2Dsl</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Dsl">
+      <HintPath>dep\Dsl.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>dep\Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp">
+      <HintPath>dep\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable, Version=1.1.37.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>dep\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Reflection.Metadata">
+      <HintPath>dep\System.Reflection.Metadata.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AnalysisHelper\BreakAnalysis.cs" />
+    <Compile Include="AnalysisHelper\InnerClassAnalysis.cs" />
+    <Compile Include="AnalysisHelper\TypeAnalysis.cs" />
+    <Compile Include="AnalysisHelper\YieldAnalysis.cs" />
+    <Compile Include="CsToDsl\CsToDsl_CoreSyntax.cs" />
+    <Compile Include="CsToDsl\CsToDsl_Exception.cs" />
+    <Compile Include="CsToDsl\CsToDsl_Expression.cs" />
+    <Compile Include="CsToDsl\CsToDsl_Linq.cs" />
+    <Compile Include="CsToDsl\CsToDsl_Misc.cs" />
+    <Compile Include="CsToDsl\CsToDsl_Object.cs" />
+    <Compile Include="CsToDsl\CsToDsl_Statement.cs" />
+    <Compile Include="CsToDsl\Logger.cs" />
+    <Compile Include="Info\ClassInfo.cs" />
+    <Compile Include="AnalysisHelper\ContinueAnalysis.cs" />
+    <Compile Include="CsToDsl\CsToDsl.cs" />
+    <Compile Include="CsToDsl\CsToDslProcessor.cs" />
+    <Compile Include="CsToDsl\CsToDslUnimplemented.cs" />
+    <Compile Include="AnalysisHelper\FieldInitializerAnalysis.cs" />
+    <Compile Include="AnalysisHelper\DslKeywordsReplacer.cs" />
+    <Compile Include="Info\ClassSymbolInfo.cs" />
+    <Compile Include="Info\InvocationInfo.cs" />
+    <Compile Include="Info\MethodInfo.cs" />
+    <Compile Include="Info\MiscInfo.cs" />
+    <Compile Include="Info\SymbolTable.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Cs2DslUtility\Cs2DslUtility.csproj">
+      <Project>{8512d1c7-f979-4a86-853c-764a5568e16a}</Project>
+      <Name>Cs2DslUtility</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
