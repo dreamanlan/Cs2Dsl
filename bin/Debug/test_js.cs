@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 [Cs2Dsl.Ignore]
 class JsConsole
@@ -50,6 +51,9 @@ class Mandelbrot
 
     private float r = 10;
     private float scale = 3.0f;
+    private int[] datas = new int[] { 1, 2, 3, 4, 5, 6 };
+    private Dictionary<int, int> dicts = new Dictionary<int, int> { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
+    private Dictionary<int, int> dicts2 = new Dictionary<int, int>(128);
 
     public static void Test()
     {

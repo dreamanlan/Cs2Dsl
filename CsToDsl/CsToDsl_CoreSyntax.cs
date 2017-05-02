@@ -248,11 +248,11 @@ namespace RoslynTool.CsToLua
             }
             if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                 if (mi.ParamsIsValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                 } else if (mi.ParamsIsExternValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                 } else {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
                 }
                 CodeBuilder.AppendLine();
             }

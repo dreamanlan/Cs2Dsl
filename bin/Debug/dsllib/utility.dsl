@@ -1,11 +1,3 @@
-lshift = function(v,n)
-{
-}
-
-rshift = function(v,n)
-{
-}
-
 condexp = function(cv, tfIsConst, tf, ffIsConst, ff)
 {
 }
@@ -15,22 +7,6 @@ condaccess = function(v, func)
 }
 
 nullcoalescing = function(v, isConst, func)
-{
-}
-
-bitnot = function(v)
-{
-}
-
-bitand = function(v1,v2)
-{
-}
-
-bitor = function(v1,v2)
-{
-}
-
-bitxor = function(v1,v2)
 {
 }
 
@@ -54,14 +30,6 @@ wrapchar = function(char, intVal)
 {
 }
 
-wraparray = function(arr)
-{
-}
-
-wrapdictionary = function(dict)
-{
-}
-
 wrapdelegation = function(handlers)
 {
 }
@@ -71,6 +39,18 @@ wrapenumerable = function(func)
 }
 
 wrapyield = function(yieldVal, isEnumerableOrEnumerator, isUnityYield)
+{
+}
+
+wrapparams = function(arr)
+{	
+}
+
+paramsremove = function(arr)
+{	
+}
+
+wraparray = function(arr)
 {
 }
 

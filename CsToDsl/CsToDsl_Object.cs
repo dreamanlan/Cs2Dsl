@@ -164,11 +164,11 @@ namespace RoslynTool.CsToLua
             }
             if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                 if (mi.ParamsIsValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                 } else if (mi.ParamsIsExternValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                 } else {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
                 }
                 CodeBuilder.AppendLine();
             }
@@ -639,11 +639,11 @@ namespace RoslynTool.CsToLua
                     }
                     if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                         if (mi.ParamsIsValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                         } else if (mi.ParamsIsExternValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                         } else {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wraparray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
                         }
                         CodeBuilder.AppendLine();
                     }
@@ -724,17 +724,17 @@ namespace RoslynTool.CsToLua
                         if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                             if (keyword == "get") {
                                 if (mi.ParamsIsValueType) {
-                                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                                 } else if (mi.ParamsIsExternValueType) {
-                                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                                 } else {
-                                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
                                 }
                                 CodeBuilder.AppendLine();
                             } else {
-                                CodeBuilder.AppendFormat("{0}local{{{1} = {{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                                CodeBuilder.AppendFormat("{0}local{{{1} = wrapparams(...)}};", GetIndentString(), mi.OriginalParamsName);
                                 CodeBuilder.AppendLine();
-                                CodeBuilder.AppendFormat("{0}local{{value = table.remove({1})}};", GetIndentString(), mi.OriginalParamsName);
+                                CodeBuilder.AppendFormat("{0}local{{value = paramsremove({1})}};", GetIndentString(), mi.OriginalParamsName);
                                 CodeBuilder.AppendLine();
                                 if (mi.ParamsIsValueType) {
                                     CodeBuilder.AppendFormat("{0}{1} = wrapvaluetypearray({2});", GetIndentString(), mi.OriginalParamsName, mi.OriginalParamsName);
@@ -857,11 +857,11 @@ namespace RoslynTool.CsToLua
                     }
                     if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                         if (mi.ParamsIsValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                         } else if (mi.ParamsIsExternValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
                         } else {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wraparray{{...}}}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
                         }
                         CodeBuilder.AppendLine();
                     }

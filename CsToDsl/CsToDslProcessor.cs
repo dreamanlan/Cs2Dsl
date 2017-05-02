@@ -842,7 +842,7 @@ namespace RoslynTool.CsToLua
                         if (exportConstructorInfo.ReturnParamNames.Count > 0) {
                             sb.AppendFormat("{0}return((function(...){{ ", GetIndentString(indent));
                             string retArgStr = string.Join(", ", exportConstructorInfo.ReturnParamNames.ToArray());
-                            sb.AppendFormat("local(newobj, {0}); (newobj", retArgStr);
+                            sb.AppendFormat("local(newobj, {0}); multiassign(newobj", retArgStr);
                             if (exportConstructorInfo.ReturnParamNames.Count > 0) {
                                 sb.Append(", ");
                                 sb.Append(retArgStr);

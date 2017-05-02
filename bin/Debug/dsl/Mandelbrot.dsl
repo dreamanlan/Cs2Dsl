@@ -60,6 +60,9 @@ class(Mandelbrot) {
 	instance_fields {
 		r = 10;
 		scale = 3.00;
+		datas = arrayinit(1, 2, 3, 4, 5, 6);
+		dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, "System.Collections.Generic.Dictionary_TKey_TValue", "ctor", dictionaryinit(1 -> 1, 2 -> 2, 3 -> 3, 4 -> 4, 5 -> 5));
+		dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, "System.Collections.Generic.Dictionary_TKey_TValue", "ctor", dictionaryinit(), 128);
 	};
 	instance_props {};
 	instance_events {};

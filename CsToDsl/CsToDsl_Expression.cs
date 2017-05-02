@@ -643,7 +643,7 @@ namespace RoslynTool.CsToLua
                         bool isDictionary = IsImplementationOfSys(oper.Type, "IDictionary");
                         bool isList = IsImplementationOfSys(oper.Type, "IList");
                         if (isDictionary) {
-                            CodeBuilder.Append("{");
+                            CodeBuilder.Append("dictionaryinit(");
                             var args = node.Expressions;
                             int ct = args.Count;
                             for (int i = 0; i < ct; ++i) {
@@ -663,9 +663,8 @@ namespace RoslynTool.CsToLua
                                             }
                                         }
                                     }
-                                    CodeBuilder.Append("[");
                                     OutputExpressionSyntax(exp.Expressions[0], opd1);
-                                    CodeBuilder.Append("] = ");
+                                    CodeBuilder.Append(" -> ");
                                     OutputExpressionSyntax(exp.Expressions[1], opd2);
                                 } else {
                                     Log(args[i], "Dictionary init error !");
@@ -674,9 +673,9 @@ namespace RoslynTool.CsToLua
                                     CodeBuilder.Append(", ");
                                 }
                             }
-                            CodeBuilder.Append("}");
+                            CodeBuilder.Append(")");
                         } else if (isList) {
-                            CodeBuilder.Append("{");
+                            CodeBuilder.Append("listinit(");
                             var args = node.Expressions;
                             int ct = args.Count;
                             for (int i = 0; i < ct; ++i) {
@@ -696,9 +695,9 @@ namespace RoslynTool.CsToLua
                                     CodeBuilder.Append(", ");
                                 }
                             }
-                            CodeBuilder.Append("}");
+                            CodeBuilder.Append(")");
                         } else {
-                            CodeBuilder.Append("{");
+                            CodeBuilder.Append("collectioninit(");
                             var args = node.Expressions;
                             int ct = args.Count;
                             for (int i = 0; i < ct; ++i) {
@@ -718,14 +717,14 @@ namespace RoslynTool.CsToLua
                                     CodeBuilder.Append(", ");
                                 }
                             }
-                            CodeBuilder.Append("}");
+                            CodeBuilder.Append(")");
                         }
                     } else {
                         Log(node, "Can't find operation type ! operation info: {0}", oper.ToString());
                     }
                 } else if (isComplex) {
                     //ComplexElementInitializer，目前未发现roslyn有实际合法的语法实例，执行到这的一般是存在语义错误的语法
-                    CodeBuilder.Append("{");
+                    CodeBuilder.Append("complexinit(");
                     var args = node.Expressions;
                     int ct = args.Count;
                     for (int i = 0; i < ct; ++i) {
@@ -734,9 +733,9 @@ namespace RoslynTool.CsToLua
                             CodeBuilder.Append(", ");
                         }
                     }
-                    CodeBuilder.Append("}");
+                    CodeBuilder.Append(")");
                 } else if (isArray) {
-                    CodeBuilder.Append("wraparray{");
+                    CodeBuilder.Append("arrayinit(");
                     var args = node.Expressions;
                     var arrInitOper = oper as IArrayInitializer;
                     int ct = args.Count;
@@ -748,7 +747,7 @@ namespace RoslynTool.CsToLua
                             CodeBuilder.Append(", ");
                         }
                     }
-                    CodeBuilder.Append("}");
+                    CodeBuilder.Append(")");
                 } else {
                     //isObjectInitializer
                     bool isCollectionObj = false;
@@ -757,7 +756,7 @@ namespace RoslynTool.CsToLua
                         isCollectionObj = IsImplementationOfSys(typeSymInfo, "ICollection");
                     }
                     if (isCollectionObj) {
-                        CodeBuilder.Append("{");
+                        CodeBuilder.Append("objectinit(");
                         var args = node.Expressions;
                         int ct = args.Count;
                         for (int i = 0; i < ct; ++i) {
@@ -776,7 +775,7 @@ namespace RoslynTool.CsToLua
                             if (i < ct - 1)
                                 CodeBuilder.Append(",");
                         }
-                        CodeBuilder.Append("}");
+                        CodeBuilder.Append(")");
                     } else {
                         CodeBuilder.Append("(function(newobj){ ");
                         var args = node.Expressions;
@@ -789,8 +788,8 @@ namespace RoslynTool.CsToLua
                             if (null != inits && i < inits.Count) {
                                 opd = inits[i] as IConversionExpression;
                             }
-                            if (args[i] is AssignmentExpressionSyntax) {
-                                VisitToplevelExpressionFirstPass(args[i], string.Empty);
+                            if (exp is AssignmentExpressionSyntax) {
+                                VisitToplevelExpressionFirstPass(exp, string.Empty);
                             } else {
                                 OutputExpressionSyntax(exp, opd);
                             }
@@ -870,10 +869,18 @@ namespace RoslynTool.CsToLua
                     CodeBuilder.Append(", ");
                     VisitInitializerExpression(node.Initializer);
                 } else {
-                    if(isCollection)
-                        CodeBuilder.Append(", {}");
-                    else
+                    if (isCollection) {
+                        bool isDictionary = IsImplementationOfSys(typeSymInfo, "IDictionary");
+                        bool isList = IsImplementationOfSys(typeSymInfo, "IList");
+                        if (isDictionary)
+                            CodeBuilder.Append(", dictionaryinit()");
+                        else if(isList)
+                            CodeBuilder.Append(", listinit()");
+                        else
+                            CodeBuilder.Append(", collectioninit()");
+                    } else {
                         CodeBuilder.Append(", null");
+                    }
                 }
                 if (ii.Args.Count + ii.DefaultValueArgs.Count + ii.GenericTypeArgs.Count > 0) {
                     CodeBuilder.Append(", ");
@@ -931,7 +938,7 @@ namespace RoslynTool.CsToLua
         }
         public override void VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node)
         {
-            CodeBuilder.Append("wrapdictionary{");
+            CodeBuilder.Append("wrapobject{");
             int ct = node.Initializers.Count;
             for (int i = 0; i < ct; ++i) {
                 var init = node.Initializers[i];
@@ -954,7 +961,7 @@ namespace RoslynTool.CsToLua
                 var rankspec = rankspecs[0];
                 int rank = rankspec.Rank;
                 if (rank > 1) {
-                    CodeBuilder.Append("(function(){ local{arr = wraparray{}};");
+                    CodeBuilder.Append("(function(){ local{arr = initializer(array){}};");
                     int ct = rankspec.Sizes.Count;
                     for (int i = 0; i < ct; ++i) {
                         CodeBuilder.AppendFormat(" local(d{0}); d{0} = ", i);
@@ -972,7 +979,7 @@ namespace RoslynTool.CsToLua
                     }
                     CodeBuilder.Append(" return(arr); })()");
                 } else {
-                    CodeBuilder.Append("wraparray{}");
+                    CodeBuilder.Append("initializer(array){}");
                 }
             } else {
                 VisitInitializerExpression(node.Initializer);

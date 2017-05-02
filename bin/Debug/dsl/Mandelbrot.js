@@ -58,6 +58,9 @@ function Mandelbrot(){
 	}
 	this.r = 10;
 	this.scale = 3.00;
+	this.datas = [1, 2, 3, 4, 5, 6];
+	this.dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, "System.Collections.Generic.Dictionary_TKey_TValue", "ctor", {1 : 1, 2 : 2, 3 : 3, 4 : 4, 5 : 5});
+	this.dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, "System.Collections.Generic.Dictionary_TKey_TValue", "ctor", {}, 128);
 }
 
 (function(){

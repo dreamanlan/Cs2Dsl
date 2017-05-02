@@ -356,6 +356,30 @@ namespace JsGenerator
                     prestr = ", ";
                 }
                 sb.Append(")");
+            } else if (id == "dictionaryinit") {
+                sb.Append("{");
+                string prestr = string.Empty;
+                for (int ix = 0; ix < data.Params.Count; ++ix) {
+                    var param = data.Params[ix] as Dsl.CallData;
+                    sb.Append(prestr);
+                    var k = param.IsHighOrder ? param.Call as Dsl.ISyntaxComponent : param.Name as Dsl.ISyntaxComponent;
+                    var v = param.GetParam(0);
+                    GenerateSyntaxComponent(k, sb, indent, false, paramsStart);
+                    sb.Append(" : ");
+                    GenerateSyntaxComponent(v, sb, indent, false, paramsStart);
+                    prestr = ", ";
+                }
+                sb.Append("}");
+            } else if (id == "listinit" || id == "collectioninit" || id == "arrayinit") {
+                sb.Append("[");
+                string prestr = string.Empty;
+                for (int ix = 0; ix < data.Params.Count; ++ix) {
+                    var param = data.Params[ix];
+                    sb.Append(prestr);
+                    GenerateSyntaxComponent(param, sb, indent, false, paramsStart);
+                    prestr = ", ";
+                }
+                sb.Append("]");
             } else {
                 if (null != callData) {
                     GenerateSyntaxComponent(callData, sb, indent, false, paramsStart);
