@@ -19,6 +19,7 @@ namespace RoslynTool
                 List<string> macros = new List<string>();
                 List<string> ignoredPath = new List<string>();
                 List<string> externPath = new List<string>();
+                List<string> internPath = new List<string>();
                 Dictionary<string, string> refByNames = new Dictionary<string, string>();
                 Dictionary<string, string> refByPaths = new Dictionary<string, string>();
                 bool enableInherit = false;
@@ -47,6 +48,14 @@ namespace RoslynTool
                                 string arg = args[i + 1];
                                 if (!arg.StartsWith("-")) {
                                     externPath.Add(arg);
+                                    ++i;
+                                }
+                            }
+                        } else if (0 == string.Compare(args[i], "-internpath", true)) {
+                            if (i < args.Length - 1) {
+                                string arg = args[i + 1];
+                                if (!arg.StartsWith("-")) {
+                                    internPath.Add(arg);
                                     ++i;
                                 }
                             }
@@ -141,8 +150,9 @@ namespace RoslynTool
                     Console.WriteLine("[Usage]:Cs2Dsl [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-d macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-src] csfile|csprojfile");
                     Console.WriteLine("\twhere:");
                     Console.WriteLine("\t\tmacro = c# macro define, used in your csharp code #if/#elif/#else/#endif etc.");
-                    Console.WriteLine("\t\texternpath = mark c# source file path in the csproj as extern class (API), these classes doesn't translate to lua.");
-                    Console.WriteLine("\t\tignorepath = ignore c# source file path in the csproj, these classes doesn't translate to lua (need translate them by hand, cs2lua use \"require 'cs2lua_custom';\" resolve xref).");
+                    Console.WriteLine("\t\tinternpath = only c# source file path in the csproj as intern class, only these classes translate to dsl.");
+                    Console.WriteLine("\t\texternpath = mark c# source file path in the csproj as extern class (API), these classes doesn't translate to dsl.");
+                    Console.WriteLine("\t\tignorepath = ignore c# source file path in the csproj, these classes doesn't translate to dsl (need translate them by hand, cs2lua use \"require 'cs2dsl_custom';\" resolve xref).");
                     Console.WriteLine("\t\tdllname = dotnet system assembly name, referenced by your csharp code.");
                     Console.WriteLine("\t\tdllpath = dotnet assembly path, referenced by your csharp code.");
                     Console.WriteLine("\t\talias = global for default or some dll toplevel namespace alias, used in your csharp code such as 'extern alias ui;'.");
@@ -153,7 +163,7 @@ namespace RoslynTool
                     }
                 }
                 if (File.Exists(file)) {
-                    return (int)CsToDslProcessor.Process(file, macros, ignoredPath, externPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult);
+                    return (int)CsToDslProcessor.Process(file, macros, ignoredPath, externPath, internPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult);
                 } else {
                     return (int)ExitCode.FileNotFound;
                 }
