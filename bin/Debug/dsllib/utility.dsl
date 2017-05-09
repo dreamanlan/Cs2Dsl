@@ -160,32 +160,6 @@ setexterninstanceindexer = function(obj, intf, name, ...)
 {
 }
 
-getstaticelement = function(class, name, ...)
-{
-}
-getinstanceelement = function(obj, name, ...)
-{
-}
-setstaticelement = function(class, name, ...)
-{
-}
-setinstanceelement = function(obj, name, ...)
-{
-}
-
-getexternstaticelement = function(class, name, ...)
-{
-}
-getexterninstanceelement = function(obj, name, ...)
-{
-}
-setexternstaticelement = function(class, name, ...)
-{
-}
-setexterninstanceelement = function(obj, name, ...)
-{
-}
-
 invokeoperator = function(class, method, ...)
 {
 }
