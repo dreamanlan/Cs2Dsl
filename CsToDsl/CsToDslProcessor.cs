@@ -161,35 +161,46 @@ namespace RoslynTool.CsToLua
             }
 
             List<MetadataReference> refs = new List<MetadataReference>();
-            refs.Add(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(System.Reflection.Metadata.AssemblyDefinition).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(List<>).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(Dictionary<,>).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(Queue<>).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(HashSet<>).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(Cs2Dsl.IgnoreAttribute).Assembly.Location));
-            /*
-            refs.Add(MetadataReference.CreateFromFile(typeof(System.Collections.Immutable.ImmutableArray).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(SyntaxTree).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(CSharpSyntaxTree).Assembly.Location));
-            */
+            if (string.IsNullOrEmpty(SymbolTable.SystemDllPath)) {
+                if (ext == ".cs") {
+                    refs.Add(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
+                    refs.Add(MetadataReference.CreateFromFile(typeof(System.Reflection.Metadata.AssemblyDefinition).Assembly.Location));
+                    refs.Add(MetadataReference.CreateFromFile(typeof(List<>).Assembly.Location));
+                    refs.Add(MetadataReference.CreateFromFile(typeof(Dictionary<,>).Assembly.Location));
+                    refs.Add(MetadataReference.CreateFromFile(typeof(Queue<>).Assembly.Location));
+                    refs.Add(MetadataReference.CreateFromFile(typeof(HashSet<>).Assembly.Location));
+                }
+
+                foreach (var pair in refByNames) {
+#pragma warning disable 618
+                    Assembly assembly = Assembly.LoadWithPartialName(pair.Key);
+#pragma warning restore 618
+                    if (null != assembly) {
+                        var arr = System.Collections.Immutable.ImmutableArray.Create(pair.Value);
+                        refs.Add(MetadataReference.CreateFromFile(assembly.Location, new MetadataReferenceProperties(MetadataImageKind.Assembly, arr)));
+                    }
+                }
+
+                refs.Add(MetadataReference.CreateFromFile(typeof(Cs2Dsl.IgnoreAttribute).Assembly.Location));
+            } else {
+                foreach (var pair in refByNames) {
+                    string file = Path.Combine(SymbolTable.SystemDllPath, pair.Key) + ".dll";
+                    var arr = System.Collections.Immutable.ImmutableArray.Create(pair.Value);
+                    refs.Add(MetadataReference.CreateFromFile(file, new MetadataReferenceProperties(MetadataImageKind.Assembly, arr)));
+                }
+
+                refs.Add(MetadataReference.CreateFromFile(typeof(Cs2Dsl.IgnoreAttribute).Assembly.Location));
+            }
+
             foreach (var pair in refByPaths) {
                 string fullPath = Path.Combine(path, pair.Key);
                 var arr = System.Collections.Immutable.ImmutableArray.Create(pair.Value);
                 refs.Add(MetadataReference.CreateFromFile(fullPath, new MetadataReferenceProperties(MetadataImageKind.Assembly, arr)));
             }
-            foreach (var pair in refByNames) {
-#pragma warning disable 618
-                Assembly assembly = Assembly.LoadWithPartialName(pair.Key);
-#pragma warning restore 618
-                if (null != assembly) {
-                    var arr = System.Collections.Immutable.ImmutableArray.Create(pair.Value);
-                    refs.Add(MetadataReference.CreateFromFile(assembly.Location, new MetadataReferenceProperties(MetadataImageKind.Assembly, arr)));
-                }
-            }
 
             List<SyntaxTree> newTrees = new List<SyntaxTree>();
             CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            compilationOptions = compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             CSharpCompilation compilation = CSharpCompilation.Create(name);
             compilation = compilation.WithOptions(compilationOptions);
             compilation = compilation.AddReferences(refs.ToArray());
@@ -364,9 +375,12 @@ namespace RoslynTool.CsToLua
             BuildAttributes(attrBuilder, compilation.Assembly, ignoredClasses);
             StringBuilder enumBuilder = new StringBuilder();
             BuildExternEnums(enumBuilder);
+            StringBuilder intfBuilder = new StringBuilder();
+            BuildInterfaces(intfBuilder);
             File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__namespaces.{0}", c_OutputExt)), nsBuilder.ToString());
             File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__attributes.{0}", c_OutputExt)), attrBuilder.ToString());
             File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__externenums.{0}", c_OutputExt)), enumBuilder.ToString());
+            File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__interfaces.{0}", c_OutputExt)), intfBuilder.ToString());
             foreach (var pair in toplevelClasses) {
                 StringBuilder classBuilder = new StringBuilder();
                 dsllibRefs.Clear();
@@ -421,7 +435,18 @@ namespace RoslynTool.CsToLua
                 mci.Key = key;
             }
             mci.Classes.Add(ci);
-
+            foreach (var pair in ci.InnerInterfaces) {
+                List<string> list;
+                if (!mci.InnerInterfaces.TryGetValue(pair.Key, out list)) {
+                    list = new List<string>();
+                    mci.InnerInterfaces.Add(pair.Key, list);
+                }
+                foreach (var intf in pair.Value) {
+                    if (!list.Contains(intf)) {
+                        list.Add(intf);
+                    }
+                }
+            }
             foreach (var pair in ci.InnerClasses) {
                 AddMergedClasses(mci.InnerClasses, pair.Key, pair.Value);
             }
@@ -702,6 +727,26 @@ namespace RoslynTool.CsToLua
                 } else {
                     return ns + "." + nsSym.Name;
                 }
+            }
+        }
+        private static void BuildInterfaces(StringBuilder sb)
+        {
+            BuildInterfaces(sb, SymbolTable.Instance.Cs2DslInterfaces);
+        }
+        private static void BuildInterfaces(StringBuilder sb, Dictionary<string, List<string>> intfs)
+        {
+            foreach (var pair in intfs) {
+                var name = pair.Key;
+                var list = pair.Value;
+                sb.AppendFormat("interface({0}) {{ interfaces {{", name, name);
+                string prestr = string.Empty;
+                foreach (var iname in list) {
+                    sb.Append(prestr);
+                    sb.AppendFormat("\"{0}\"", iname);
+                    prestr = "; ";
+                }
+                sb.Append("}; };");
+                sb.AppendLine();
             }
         }
         private static void BuildDslClass(StringBuilder sb, MergedNamespaceInfo toplevelMni, Dictionary<string, MergedClassInfo> toplevelMcis, HashSet<string> dsllibRefs)
@@ -1184,6 +1229,10 @@ namespace RoslynTool.CsToLua
             foreach (var ci in classes) {
                 sb.Append(ci.AfterOuterCodeBuilder.ToString());
             }
+            sb.AppendLine();
+
+            sb.AppendLine();
+            BuildInterfaces(sb, mci.InnerInterfaces);
             sb.AppendLine();
 
             foreach (var pair in mci.InnerClasses) {

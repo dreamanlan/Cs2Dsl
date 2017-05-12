@@ -52,6 +52,7 @@ namespace RoslynTool.CsToLua
         internal StringBuilder StaticInitializerCodeBuilder = new StringBuilder();
 
         internal Dictionary<string, ClassInfo> InnerClasses = new Dictionary<string, ClassInfo>();
+        internal Dictionary<string, List<string>> InnerInterfaces = new Dictionary<string, List<string>>();
 
         internal void Init(INamedTypeSymbol sym, ClassSymbolInfo info)
         {

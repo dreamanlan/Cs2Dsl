@@ -60,6 +60,10 @@ namespace RoslynTool.CsToLua
         {
             get { return m_TypeArguments; }
         }
+        internal Dictionary<string, List<string>> Cs2DslInterfaces
+        {
+            get { return m_Cs2DslInterfaces; }
+        }
         internal void SetTypeParamsAndArgs(List<ITypeParameterSymbol> typeParams, List<ITypeSymbol> typeArgs, INamedTypeSymbol refType)
         {
             m_TypeParameters.Clear();
@@ -245,6 +249,7 @@ namespace RoslynTool.CsToLua
 
         private List<ITypeParameterSymbol> m_TypeParameters = new List<ITypeParameterSymbol>();
         private List<ITypeSymbol> m_TypeArguments = new List<ITypeSymbol>();
+        private Dictionary<string, List<string>> m_Cs2DslInterfaces = new Dictionary<string, List<string>>();
         
         internal static SymbolTable Instance
         {
@@ -491,12 +496,18 @@ namespace RoslynTool.CsToLua
             get { return s_ArrayLowerBoundIsOne; }
             set { s_ArrayLowerBoundIsOne = value; }
         }
+        internal static string SystemDllPath
+        {
+            get { return s_SystemDllPath; }
+            set { s_SystemDllPath = value; }
+        }
 
         private static string s_ExternClassNamePrefix = string.Empty;
         private static bool s_NoAutoRequire = false;
         private static bool s_DslComponentByString = false;
         private static bool s_UseArrayGetSet = false;
         private static bool s_ArrayLowerBoundIsOne = false;
+        private static string s_SystemDllPath = string.Empty;
 
         private static HashSet<string> s_ExtraDslKeywords = new HashSet<string> {
             "and", "elseif", "end", "function", "local", "null", "not", "or", "repeat", "then", "until"
