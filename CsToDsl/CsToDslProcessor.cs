@@ -159,9 +159,16 @@ namespace RoslynTool.CsToLua
                 Console.WriteLine("{0}", File.ReadAllText(Path.Combine(logDir, "SyntaxError.log")));
                 return ExitCode.SyntaxError;
             }
-            
+
+            //确保常用的Assembly被引用
             if (!refByNames.ContainsKey("mscorlib")) {
                 refByNames.Add("mscorlib", "global");
+            }
+            if (!refByNames.ContainsKey("System")) {
+                refByNames.Add("System", "global");
+            }
+            if (!refByNames.ContainsKey("System.Core")) {
+                refByNames.Add("System.Core", "global");
             }
             List<MetadataReference> refs = new List<MetadataReference>();
             if (string.IsNullOrEmpty(SymbolTable.SystemDllPath)) {
