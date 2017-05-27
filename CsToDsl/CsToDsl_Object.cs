@@ -387,10 +387,13 @@ namespace RoslynTool.CsToLua
                     if (null != oper) {
                         opd = oper.Value as IConversionExpression;
                     }
+                    CodeBuilder.AppendFormat("{0}", declSym.Type.TypeKind == TypeKind.Delegate ? "delegationwrap(" : string.Empty);
                     OutputExpressionSyntax(node.Initializer.Value, opd);
-                    CodeBuilder.Append(",");
+                    CodeBuilder.AppendFormat("{0};", declSym.Type.TypeKind == TypeKind.Delegate ? ")" : string.Empty);
+                } else if (declSym.Type.TypeKind == TypeKind.Delegate) {
+                    CodeBuilder.Append("wrapdelegation{};");
                 } else {
-                    CodeBuilder.Append("__cs2dsl_nil_field_value,");
+                    CodeBuilder.Append("__cs2dsl_nil_field_value;");
                 }
                 CodeBuilder.AppendLine();
                 --m_Indent;
