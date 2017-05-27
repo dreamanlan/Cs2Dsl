@@ -421,7 +421,7 @@ namespace RoslynTool.CsToLua
                                 if (SymbolTable.Instance.IsCs2DslSymbol(fieldSym.Type)) {
                                     CodeBuilder.AppendFormat(" = new {0}();", fullTypeName);
                                 } else {
-                                    CodeBuilder.AppendFormat(" = newexternobject({0}, \"{0}\", null, {{}});", fullTypeName);
+                                    CodeBuilder.AppendFormat(" = newexternobject({0}, \"{0}\", null, null);", fullTypeName);
                                 }
                                 CodeBuilder.AppendLine();
                                 --m_Indent;
@@ -455,7 +455,7 @@ namespace RoslynTool.CsToLua
                             if (SymbolTable.Instance.IsCs2DslSymbol(fieldSym.Type)) {
                                 CodeBuilder.AppendFormat(" = new {0}();", fullTypeName);
                             } else {
-                                CodeBuilder.AppendFormat(" = newexternobject({0}, \"{0}\", null, {{}});", fullTypeName);
+                                CodeBuilder.AppendFormat(" = newexternobject({0}, \"{0}\", null, null);", fullTypeName);
                             }
                             CodeBuilder.AppendLine();
                             --m_Indent;
