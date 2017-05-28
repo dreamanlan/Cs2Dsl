@@ -894,7 +894,7 @@ namespace RoslynTool.CsToLua
                             CodeBuilder.Append("this.");
                         }
                         CodeBuilder.Append(manglingName);
-                        CodeBuilder.AppendFormat("({0}){1} }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                        CodeBuilder.AppendFormat("({0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
                     } else {
                         VisitArgumentList(node.ArgumentList);
                     }
@@ -931,6 +931,7 @@ namespace RoslynTool.CsToLua
         public override void VisitArrayCreationExpression(ArrayCreationExpressionSyntax node)
         {
             if (null == node.Initializer) {
+                var oper = m_Model.GetOperation(node) as IArrayCreationExpression;
                 var rankspecs = node.Type.RankSpecifiers;
                 var rankspec = rankspecs[0];
                 int rank = rankspec.Rank;
@@ -944,6 +945,27 @@ namespace RoslynTool.CsToLua
                         CodeBuilder.AppendFormat("; for(i{0} = 1,d{1} ){{ arr{2} = ", i, i, GetArraySubscriptString(i));
                         if (i < ct - 1) {
                             CodeBuilder.Append("{};");
+                        } else if (null != oper && null != oper.ElementType) {
+                            var etype = oper.ElementType;
+                            for (; ; ) {
+                                var t = etype as IArrayTypeSymbol;
+                                if (null != t) {
+                                    etype = t.ElementType;
+                                } else {
+                                    break;
+                                }
+                            }
+                            if (etype.IsValueType) {
+                                if (SymbolTable.IsBasicType(etype, false)) {
+                                    CodeBuilder.Append("0;");
+                                } else {
+                                    bool isExternal = !SymbolTable.Instance.IsCs2DslSymbol(etype);
+                                    string fn = ClassInfo.GetFullName(etype);
+                                    CodeBuilder.AppendFormat("defaultvalue({0}, \"{1}\", {2});", fn, fn, isExternal ? "true" : "false");
+                                }
+                            } else {
+                                CodeBuilder.Append("null;");
+                            }
                         } else {
                             CodeBuilder.Append("null;");
                         }
