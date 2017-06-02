@@ -384,10 +384,13 @@ namespace RoslynTool.CsToLua
             BuildExternEnums(enumBuilder);
             StringBuilder intfBuilder = new StringBuilder();
             BuildInterfaces(intfBuilder);
+            StringBuilder refExternBuilder = new StringBuilder();
+            BuildReferencedExternTypes(refExternBuilder);
             File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__namespaces.{0}", c_OutputExt)), nsBuilder.ToString());
             File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__attributes.{0}", c_OutputExt)), attrBuilder.ToString());
             File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__externenums.{0}", c_OutputExt)), enumBuilder.ToString());
             File.WriteAllText(Path.Combine(outputDir, string.Format("cs2dsl__interfaces.{0}", c_OutputExt)), intfBuilder.ToString());
+            File.WriteAllText(Path.Combine(outputDir, "cs2dsl__references.txt"), refExternBuilder.ToString());
             foreach (var pair in toplevelClasses) {
                 StringBuilder classBuilder = new StringBuilder();
                 dsllibRefs.Clear();
@@ -767,6 +770,12 @@ namespace RoslynTool.CsToLua
                 }
                 sb.Append("}; };");
                 sb.AppendLine();
+            }
+        }
+        private static void BuildReferencedExternTypes(StringBuilder sb)
+        {
+            foreach (var key in SymbolTable.Instance.ReferencedExternTypes) {
+                sb.AppendLine(key);
             }
         }
         private static void BuildDslClass(StringBuilder sb, MergedNamespaceInfo toplevelMni, Dictionary<string, MergedClassInfo> toplevelMcis, HashSet<string> dsllibRefs)
