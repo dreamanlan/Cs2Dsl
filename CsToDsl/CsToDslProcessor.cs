@@ -23,7 +23,7 @@ namespace RoslynTool.CsToLua
     }
     public static class CsToDslProcessor
     {
-        public static ExitCode Process(string srcFile, IList<string> macros, IList<string> ignoredPath, IList<string> externPath, IList<string> internPath, IDictionary<string, string> _refByNames, IDictionary<string, string> _refByPaths, bool enableInherit, bool enableLinq, bool outputResult)
+        public static ExitCode Process(string srcFile, IList<string> macros, IList<string> ignoredPath, IList<string> externPath, IList<string> internPath, IDictionary<string, string> _refByNames, IDictionary<string, string> _refByPaths, bool enableInherit, bool enableLinq, bool outputResult, bool parallel)
         {
             const string c_OutputExt = "dsl";
             List<string> preprocessors = new List<string>(macros);
@@ -125,7 +125,7 @@ namespace RoslynTool.CsToLua
             List<SyntaxTree> trees = new List<SyntaxTree>();
             using (StreamWriter sw = new StreamWriter(Path.Combine(logDir, "SyntaxError.log"))) {
                 using (StreamWriter sw2 = new StreamWriter(Path.Combine(logDir, "SyntaxWarning.log"))) {
-                    Parallel.ForEach(files, (file) => {
+                    Action<string> handler = (file) => {
                         string filePath = Path.Combine(path, file);
                         string fileName = Path.GetFileNameWithoutExtension(filePath);
                         CSharpParseOptions options = new CSharpParseOptions();
@@ -157,7 +157,14 @@ namespace RoslynTool.CsToLua
                                 LockWriteLine(sw2, "{0}", msg);
                             }
                         }
-                    });
+                    };
+                    if (parallel) {
+                        Parallel.ForEach(files, handler);
+                    } else {
+                        foreach (var file in files) {
+                            handler(file);
+                        }
+                    }
                     sw2.Close();
                 }
                 sw.Close();
@@ -234,7 +241,7 @@ namespace RoslynTool.CsToLua
             using (StreamWriter sw = new StreamWriter(Path.Combine(logDir, "SemanticError.log"))) {
                 using (StreamWriter sw2 = new StreamWriter(Path.Combine(logDir, "SemanticWarning.log"))) {
                     using (StreamWriter sw3 = new StreamWriter(Path.Combine(logDir, "Translation.log"))) {
-                        Parallel.ForEach(newTrees, (tree) => {
+                        Action<SyntaxTree> handler1 = (tree) => {
                             bool ignore = IsIgnoredFile(ignoredFullPath, tree.FilePath);
                             bool isExtern = IsExternFile(externFullPath, tree.FilePath);
                             if (internFullPath.Count > 0) {
@@ -281,9 +288,16 @@ namespace RoslynTool.CsToLua
                                     }
                                 }
                             }
-                        });
+                        };
+                        if (parallel) {
+                            Parallel.ForEach(newTrees, handler1);
+                        } else {
+                            foreach (var tree in newTrees) {
+                                handler1(tree);
+                            }
+                        }
                         SymbolTable.Instance.SymbolClassified();
-                        Parallel.ForEach(newTrees, (tree) => {
+                        Action<SyntaxTree> handler2 = (tree) => {
                             bool ignore = IsIgnoredFile(ignoredFullPath, tree.FilePath);
                             bool isExtern = IsExternFile(externFullPath, tree.FilePath);
                             if (internFullPath.Count > 0) {
@@ -345,7 +359,14 @@ namespace RoslynTool.CsToLua
                                     }
                                 }
                             }
-                        });
+                        };
+                        if (parallel) {
+                            Parallel.ForEach(newTrees, handler2);
+                        } else {
+                            foreach (var tree in newTrees) {
+                                handler2(tree);
+                            }
+                        }
                         HashSet<string> handledTypes = new HashSet<string>();
                         var typeSyms = new Queue<DerivedGenericTypeInstanceInfo>();
                         Action<SyntaxNode, INamedTypeSymbol> action = (SyntaxNode node, INamedTypeSymbol typeSym) => {

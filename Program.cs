@@ -26,6 +26,7 @@ namespace RoslynTool
                 bool enableInherit = false;
                 bool enableLinq = false;
                 bool outputResult = false;
+                bool parallel = false;
                 if (args.Length > 0) {
                     for (int i = 0; i < args.Length; ++i) {
                         if (0 == string.Compare(args[i], "-d", true)) {
@@ -85,6 +86,8 @@ namespace RoslynTool
                             enableLinq = true;
                         } else if (0 == string.Compare(args[i], "-outputresult", true)) {
                             outputResult = true;
+                        } else if (0 == string.Compare(args[i], "-parallel", true)) {
+                            parallel = true;
                         } else if (0 == string.Compare(args[i], "-noautorequire", true)) {
                             SymbolTable.NoAutoRequire = true;
                         } else if (0 == string.Compare(args[i], "-componentbystring", true)) {
@@ -173,7 +176,7 @@ namespace RoslynTool
                 }
                 if (File.Exists(file)) {
                     var stopwatch = Stopwatch.StartNew();
-                    var result = (int)CsToDslProcessor.Process(file, macros, ignoredPath, externPath, internPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult);
+                    var result = (int)CsToDslProcessor.Process(file, macros, ignoredPath, externPath, internPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult, parallel);
                     stopwatch.Stop();
                     Console.WriteLine("RunningTime: {0}s", stopwatch.Elapsed.TotalSeconds);
                     return result;

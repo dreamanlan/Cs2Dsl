@@ -52,16 +52,17 @@ namespace RoslynTool.CsToLua
                 } else {
                     intfs = m_ClassInfoStack.Peek().InnerInterfaces;
                 }
-
-                List<string> list;
-                if (!intfs.TryGetValue(fullName, out list)) {
-                    list = new List<string>();
-                    intfs.Add(fullName, list);
-                }
-                foreach (var intf in sym.AllInterfaces) {
-                    var fn = ClassInfo.GetFullName(intf);
-                    if (!list.Contains(fn)) {
-                        list.Add(fn);
+                lock (intfs) {
+                    List<string> list;
+                    if (!intfs.TryGetValue(fullName, out list)) {
+                        list = new List<string>();
+                        intfs.Add(fullName, list);
+                    }
+                    foreach (var intf in sym.AllInterfaces) {
+                        var fn = ClassInfo.GetFullName(intf);
+                        if (!list.Contains(fn)) {
+                            list.Add(fn);
+                        }
                     }
                 }
             }
