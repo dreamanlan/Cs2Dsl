@@ -422,7 +422,7 @@ namespace RoslynTool.CsToLua
                         CodeBuilder.Append(".");
                     }
                     CodeBuilder.Append(manglingName);
-                    CodeBuilder.AppendFormat("({0}){1} }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                    CodeBuilder.AppendFormat("({0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
                 } else {
                     var psym = sym as IPropertySymbol;
                     string fnOfIntf = string.Empty;
