@@ -407,6 +407,10 @@ namespace RoslynTool.CsToLua
                     var mi = new MethodInfo();
                     mi.Init(msym, node);
 
+                    string delegationKey = string.Format("{0}:{1}", ClassInfo.GetFullName(msym.ContainingType), manglingName);
+                    string varName = string.Format("__compiler_delegation_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                    CodeBuilder.AppendFormat("(function(){{ local({0}); {0} = ", varName);
+
                     CodeBuilder.Append("(function(");
                     string paramsString = string.Join(", ", mi.ParamNames.ToArray());
                     CodeBuilder.Append(paramsString);
@@ -423,6 +427,20 @@ namespace RoslynTool.CsToLua
                     }
                     CodeBuilder.Append(manglingName);
                     CodeBuilder.AppendFormat("({0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
+
+                    CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
+                    if (string.IsNullOrEmpty(className)) {
+                        OutputExpressionSyntax(node.Expression);
+                        CodeBuilder.Append(", ");
+                        OutputExpressionSyntax(node.Expression);
+                    } else {
+                        CodeBuilder.Append(className);
+                        CodeBuilder.Append(", ");
+                        CodeBuilder.Append(className);
+                    }
+                    CodeBuilder.Append(".");
+                    CodeBuilder.Append(manglingName);
+                    CodeBuilder.AppendFormat("); return({0}); }})()", varName);
                 } else {
                     var psym = sym as IPropertySymbol;
                     string fnOfIntf = string.Empty;
@@ -877,6 +895,13 @@ namespace RoslynTool.CsToLua
                         var mi = new MethodInfo();
                         mi.Init(msym, node);
 
+                        AddReferenceAndTryDeriveGenericTypeInstance(ci, msym);
+                        string className = ClassInfo.GetFullName(msym.ContainingType);
+
+                        string delegationKey = string.Format("{0}:{1}", className, manglingName);
+                        string varName = string.Format("__compiler_delegation_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                        CodeBuilder.AppendFormat("(function(){{ local({0}); {0} = ", varName);
+
                         CodeBuilder.Append("(function(");
                         string paramsString = string.Join(", ", mi.ParamNames.ToArray());
                         CodeBuilder.Append(paramsString);
@@ -885,9 +910,6 @@ namespace RoslynTool.CsToLua
                             CodeBuilder.Append("return(");
                         }
                         if (msym.IsStatic) {
-                            AddReferenceAndTryDeriveGenericTypeInstance(ci, msym);
-
-                            string className = ClassInfo.GetFullName(msym.ContainingType);
                             CodeBuilder.Append(className);
                             CodeBuilder.Append(".");
                         } else {
@@ -895,6 +917,18 @@ namespace RoslynTool.CsToLua
                         }
                         CodeBuilder.Append(manglingName);
                         CodeBuilder.AppendFormat("({0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
+
+                        CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
+                        if (msym.IsStatic) {
+                            CodeBuilder.Append(className);
+                            CodeBuilder.Append(", ");
+                            CodeBuilder.Append(className);
+                        } else {
+                            CodeBuilder.Append("this, this");
+                        }
+                        CodeBuilder.Append(".");
+                        CodeBuilder.Append(manglingName);
+                        CodeBuilder.AppendFormat("); return({0}); }})()", varName);
                     } else {
                         VisitArgumentList(node.ArgumentList);
                     }

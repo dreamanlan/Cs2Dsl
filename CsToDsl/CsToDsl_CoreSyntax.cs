@@ -715,7 +715,10 @@ namespace RoslynTool.CsToLua
                                 CodeBuilder.AppendFormat("(function(){{ local({0}); multiassign({1}", localName, localName);
                             }
                         } else {
-                            CodeBuilder.AppendFormat("{0}local({1}); multiassign({2}", GetIndentString(), node.Identifier.Text, node.Identifier.Text);
+                            if (ct > 0)
+                                CodeBuilder.AppendFormat("{0}local({1}); multiassign({2}", GetIndentString(), node.Identifier.Text, node.Identifier.Text);
+                            else
+                                CodeBuilder.AppendFormat("{0}local({1}); {2}", GetIndentString(), node.Identifier.Text, node.Identifier.Text);
                         }
                         MemberAccessExpressionSyntax memberAccess = invocation.Expression as MemberAccessExpressionSyntax;
                         if (null != memberAccess) {
@@ -1218,6 +1221,10 @@ namespace RoslynTool.CsToLua
         }
         private void VisitAssignmentDelegation(ClassInfo ci, string op, string baseOp, AssignmentExpressionSyntax assign, IOperation leftOper, ISymbol leftSym, IConversionExpression opd)
         {
+            if (null == leftSym) {
+                Log(assign, "assignment delegation, left symbol == null");
+                return;
+            }
             if (leftSym.Kind == SymbolKind.Local && op == "=") {
                 OutputExpressionSyntax(assign.Left);
                 CodeBuilder.Append(" = ");
@@ -1244,12 +1251,15 @@ namespace RoslynTool.CsToLua
                     Log(assign, "Unsupported delegation operator {0} !", op);
                     postfix = "error";
                 }
+                bool isStatic = leftSym.IsStatic;
+                string containingName = ClassInfo.GetFullName(leftSym.ContainingType);
                 CodeBuilder.AppendFormat("{0}delegation{1}", prefix, postfix);
                 CodeBuilder.Append("(");
-                CodeBuilder.AppendFormat("{0}, ", isEvent ? "true" : "false");
+                CodeBuilder.AppendFormat("{0}, {1}, ", isEvent ? "true" : "false", isStatic ? "true" : "false");
                 if (leftSym.Kind == SymbolKind.Field || leftSym.Kind == SymbolKind.Property || leftSym.Kind == SymbolKind.Event) {
                     var memberAccess = assign.Left as MemberAccessExpressionSyntax;
                     if (null != memberAccess) {
+                        CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, memberAccess.Name.Identifier.Text);
                         OutputExpressionSyntax(memberAccess.Expression);
                         CodeBuilder.Append(", ");
                         string intf = "null";
@@ -1257,13 +1267,19 @@ namespace RoslynTool.CsToLua
                         CheckExplicitInterfaceAccess(leftSym, ref intf, ref mname);
                         CodeBuilder.AppendFormat("{0}, {1}", intf, mname);
                     } else if (leftSym.ContainingType == ci.SemanticInfo || ci.IsInherit(leftSym.ContainingType)) {
-                        CodeBuilder.Append("this, null, ");
+                        CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, leftSym.Name);
+                        if (leftSym.IsStatic)
+                            CodeBuilder.AppendFormat("{0}, nil, ", ClassInfo.GetFullName(leftSym.ContainingType));
+                        else
+                            CodeBuilder.Append("this, null, ");
                         CodeBuilder.AppendFormat("\"{0}\"", leftSym.Name);
                     } else {
+                        CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, leftSym.Name);
                         CodeBuilder.Append("newobj, null, ");
                         CodeBuilder.AppendFormat("\"{0}\"", leftSym.Name);
                     }
                 } else {
+                    CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, leftSym.Name);
                     OutputExpressionSyntax(assign.Left);
                     CodeBuilder.Append(", null, null");
                 }

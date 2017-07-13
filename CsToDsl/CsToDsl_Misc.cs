@@ -243,6 +243,11 @@ namespace RoslynTool.CsToLua
                                 CodeBuilder.AppendFormat("this.{0}", manglingName);
                             }
                         } else {
+                            string className = ClassInfo.GetFullName(msym.ContainingType);
+                            string delegationKey = string.Format("{0}:{1}", className, manglingName);
+                            string varName = string.Format("__compiler_delegation_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                            CodeBuilder.AppendFormat("(function(){{ local({0}); {0} = ", varName);
+
                             CodeBuilder.Append("(function(");
                             string paramsString = string.Join(", ", mi.ParamNames.ToArray());
                             CodeBuilder.Append(paramsString);
@@ -251,6 +256,18 @@ namespace RoslynTool.CsToLua
                             } else {
                                 CodeBuilder.AppendFormat("){{ {0}this.{1}({2}){3}; }})", msym.ReturnsVoid ? string.Empty : "return(", manglingName, paramsString, msym.ReturnsVoid ? string.Empty : ")");
                             }
+
+                            CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
+                            if (sym.IsStatic) {
+                                CodeBuilder.Append(classInfo.Key);
+                                CodeBuilder.Append(", ");
+                                CodeBuilder.Append(classInfo.Key);
+                            } else {
+                                CodeBuilder.Append("this, this");
+                            }
+                            CodeBuilder.Append(".");
+                            CodeBuilder.Append(manglingName);
+                            CodeBuilder.AppendFormat("); return({0}); }})()", varName);
                         }
                         return;
                     }

@@ -106,31 +106,39 @@ newexterncollection = function(t, className, ctor, coll, ...)
 {
 };
 
+setdelegationkey = function(func, key, obj, member)
+{
+};
+
+getdelegationkey = function(func)
+{
+};
+
 delegationwrap = function(handler)
 {
 };
 
-delegationset = function(isevent, t, intf, k, handler)
+delegationset = function(isevent, isstatic, key, t, intf, k, handler)
 {
 };
 
-delegationadd = function(isevent, t, intf, k, handler)
+delegationadd = function(isevent, isstatic, key, t, intf, k, handler)
 {
 };
 
-delegationremove = function (isevent, t, intf, k, handler)
+delegationremove = function (isevent, isstatic, key, t, intf, k, handler)
 {
 };
 
-externdelegationset = function(isevent, t, intf, k, handler)
+externdelegationset = function(isevent, isstatic, key, t, intf, k, handler)
 {
 };
 
-externdelegationadd = function(isevent, t, intf, k, handler)
+externdelegationadd = function(isevent, isstatic, key, t, intf, k, handler)
 {
 };
 
-externdelegationremove = function(isevent, t, intf, k, handler)
+externdelegationremove = function(isevent, isstatic, key, t, intf, k, handler)
 {
 };
 
