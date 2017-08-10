@@ -444,14 +444,14 @@ namespace RoslynTool.CsToLua
                 dsllibRefs.Clear();
                 string fileName = BuildDslClass(classBuilder, pair.Key, pair.Value, dsllibRefs);
                 foreach (string lib in dsllibRefs) {
-                    string libFile = Path.Combine(exepath, "dsllib/" + lib);
+                    string libFile = Path.Combine(exepath, "dsllib/" + lib.ToLower());
                     if (File.Exists(libFile)) {
-                        File.Copy(libFile, Path.Combine(outputDir, string.Format("{0}.{1}", lib, c_OutputExt)), true);
+                        File.Copy(libFile, Path.Combine(outputDir, string.Format("{0}.{1}", lib.ToLower(), c_OutputExt)), true);
                     } else {
                         Console.WriteLine("Can't find file '{0}' in dsllib, you should copy it to output dir !", libFile);
                     }
                 }
-                File.WriteAllText(Path.Combine(outputDir, Path.ChangeExtension(fileName, c_OutputExt)), classBuilder.ToString());
+                File.WriteAllText(Path.Combine(outputDir, Path.ChangeExtension(fileName.ToLower(), c_OutputExt)), classBuilder.ToString());
             }
             StringBuilder allClassBuilder = new StringBuilder();
             dsllibRefs.Clear();
@@ -839,7 +839,7 @@ namespace RoslynTool.CsToLua
             sb.AppendLine("require(\"cs2dsl__attributes\");");
             sb.AppendLine("require(\"cs2dsl__externenums\");");
             foreach (string lib in dsllibRefs) {
-                sb.AppendFormat("require(\"{0}\");", lib);
+                sb.AppendFormat("require(\"{0}\");", lib.ToLower());
                 sb.AppendLine();
             }
             sb.Append(code.ToString());
@@ -932,7 +932,7 @@ namespace RoslynTool.CsToLua
                 sb.AppendLine("require(\"cs2dsl__namespaces\");");
                 sb.AppendLine("require(\"cs2dsl__externenums\");");
                 foreach (string lib in requiredlibs) {
-                    sb.AppendFormat("require(\"{0}\");", lib);
+                    sb.AppendFormat("require(\"{0}\");", lib.ToLower());
                     sb.AppendLine();
                     refs.Add(lib);
                 }
@@ -944,7 +944,7 @@ namespace RoslynTool.CsToLua
                             if (!r.StartsWith(SymbolTable.PrefixExternClassName("System.")) && !r.StartsWith(SymbolTable.PrefixExternClassName("UnityEngine."))) {
                                 string refname = r.Replace(".", "__");
                                 if (!refs.Contains(refname)) {
-                                    sb.AppendFormat("require(\"{0}\");", refname);
+                                    sb.AppendFormat("require(\"{0}\");", refname.ToLower());
                                     sb.AppendLine();
                                     refs.Add(refname);
                                 }
