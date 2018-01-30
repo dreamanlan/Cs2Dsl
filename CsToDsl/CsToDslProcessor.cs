@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace RoslynTool.CsToLua
+namespace RoslynTool.CsToDsl
 {
     public enum ExitCode : int
     {
@@ -333,17 +333,18 @@ namespace RoslynTool.CsToLua
                             }
 
                             if (!ignore && !isExtern) {
-                                CsDslTranslater csToLua = new CsDslTranslater(model, enableInherit, enableLinq);
-                                csToLua.Translate(root);
-                                if (csToLua.HaveError) {
+                                CsDslTranslater csToDsl = new CsDslTranslater(model, enableInherit, enableLinq);
+                                csToDsl.Translate(root);
+                                if (csToDsl.HaveError) {
                                     LockWriteLine(sw3, "============<<<Translation Error:{0}>>>============", fileName);
                                     lock (sw3) {
-                                        csToLua.SaveLog(sw3);
+                                        csToDsl.SaveLog(sw3);
+                                        csToDsl.ClearLog();
                                     }
                                     haveTranslationError = true;
                                 }
 
-                                foreach (var pair in csToLua.ToplevelClasses) {
+                                foreach (var pair in csToDsl.ToplevelClasses) {
                                     var key = pair.Key;
                                     var cis = pair.Value;
 
@@ -372,20 +373,21 @@ namespace RoslynTool.CsToLua
                         Action<SyntaxNode, INamedTypeSymbol> action = (SyntaxNode node, INamedTypeSymbol typeSym) => {
                             string fileName = Path.GetFileNameWithoutExtension(node.SyntaxTree.FilePath);
                             SemanticModel model = compilation.GetSemanticModel(node.SyntaxTree, true);
-                            CsDslTranslater csToLua = new CsDslTranslater(model, enableInherit, enableLinq);
-                            csToLua.Translate(node, typeSym);
-                            if (csToLua.HaveError) {
+                            CsDslTranslater csToDsl = new CsDslTranslater(model, enableInherit, enableLinq);
+                            csToDsl.Translate(node, typeSym);
+                            if (csToDsl.HaveError) {
                                 sw3.WriteLine("============<<<Translation Error:{0}>>>============", fileName);
-                                csToLua.SaveLog(sw3);
+                                csToDsl.SaveLog(sw3);
+                                csToDsl.ClearLog();
                                 haveTranslationError = true;
                             } else {
-                                while (csToLua.DerivedGenericTypeInstances.Count > 0) {
-                                    var t = csToLua.DerivedGenericTypeInstances.Dequeue();
+                                while (csToDsl.DerivedGenericTypeInstances.Count > 0) {
+                                    var t = csToDsl.DerivedGenericTypeInstances.Dequeue();
                                     typeSyms.Enqueue(t);
                                 }
                             }
 
-                            foreach (var cpair in csToLua.ToplevelClasses) {
+                            foreach (var cpair in csToDsl.ToplevelClasses) {
                                 var ckey = cpair.Key;
                                 var cis = cpair.Value;
 
@@ -444,7 +446,7 @@ namespace RoslynTool.CsToLua
                 dsllibRefs.Clear();
                 string fileName = BuildDslClass(classBuilder, pair.Key, pair.Value, dsllibRefs);
                 foreach (string lib in dsllibRefs) {
-                    string libFile = Path.Combine(exepath, "dsllib/" + lib.ToLower());
+                    string libFile = Path.Combine(exepath, "dsllib/" + lib.ToLower() + ".dsl");
                     if (File.Exists(libFile)) {
                         File.Copy(libFile, Path.Combine(outputDir, string.Format("{0}.{1}", lib.ToLower(), c_OutputExt)), true);
                     } else {

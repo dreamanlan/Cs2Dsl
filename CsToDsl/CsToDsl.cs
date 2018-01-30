@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 
-namespace RoslynTool.CsToLua
+namespace RoslynTool.CsToDsl
 {
     internal sealed class DerivedGenericTypeInstanceInfo
     {
@@ -77,6 +77,10 @@ namespace RoslynTool.CsToLua
                 m_LastToplevelClass.AfterOuterCodeBuilder.Append(m_ToplevelCodeBuilder.ToString());
                 m_ToplevelCodeBuilder.Clear();
             }
+        }
+        internal void ClearLog()
+        {
+            Logger.Instance.ClearLog();
         }
         internal void SaveLog(TextWriter writer)
         {
@@ -196,6 +200,10 @@ namespace RoslynTool.CsToLua
         private string GetIndentString()
         {
             return GetIndentString(m_Indent);
+        }
+        private void Log(string tag, string format, params object[] args)
+        {
+            Logger.Instance.Log(tag, format, args);
         }
         private void Log(SyntaxNode node, string format, params object[] args)
         {

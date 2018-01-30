@@ -6,7 +6,7 @@ using System.IO;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using RoslynTool.CsToLua;
+using RoslynTool.CsToDsl;
 using System.Diagnostics;
 
 namespace RoslynTool

@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.Semantics;
 
-namespace RoslynTool.CsToLua
+namespace RoslynTool.CsToDsl
 {
     internal class ArgDefaultValueInfo
     {
@@ -83,7 +83,8 @@ namespace RoslynTool.CsToLua
                     var param = sym.Parameters[i];
                     if (param.HasExplicitDefaultValue) {
                         var decl = param.DeclaringSyntaxReferences;
-                        if (decl.Length == 1) {
+                        bool handled = false;
+                        if (decl.Length >= 1) {
                             var node = param.DeclaringSyntaxReferences[0].GetSyntax() as ParameterSyntax;
                             if (null != node) {
                                 var exp = node.Default.Value;
@@ -93,8 +94,12 @@ namespace RoslynTool.CsToLua
                                     var oper = newModel.GetOperation(exp);
                                     //var dsym = newModel.GetSymbolInfo(exp).Symbol;
                                     DefaultValueArgs.Add(new ArgDefaultValueInfo { Value = param.ExplicitDefaultValue, OperOrSym = oper });
+                                    handled = true;
                                 }
                             }
+                        }
+                        if (!handled) {
+                            DefaultValueArgs.Add(new ArgDefaultValueInfo { Value = param.ExplicitDefaultValue, OperOrSym = null });
                         }
                     }
                 }
@@ -150,7 +155,8 @@ namespace RoslynTool.CsToLua
                     var param = sym.Parameters[i];
                     if (param.HasExplicitDefaultValue) {
                         var decl = param.DeclaringSyntaxReferences;
-                        if (decl.Length == 1) {
+                        bool handled = false;
+                        if (decl.Length >= 1) {
                             var node = param.DeclaringSyntaxReferences[0].GetSyntax() as ParameterSyntax;
                             if (null != node) {
                                 var exp = node.Default.Value;
@@ -160,8 +166,12 @@ namespace RoslynTool.CsToLua
                                     var oper = newModel.GetOperation(exp);
                                     //var dsym = newModel.GetSymbolInfo(exp).Symbol;
                                     DefaultValueArgs.Add(new ArgDefaultValueInfo { Value = param.ExplicitDefaultValue, OperOrSym = oper });
+                                    handled = true;
                                 }
                             }
+                        }
+                        if (!handled) {
+                            DefaultValueArgs.Add(new ArgDefaultValueInfo { Value = param.ExplicitDefaultValue, OperOrSym = null });
                         }
                     }
                 }
@@ -216,8 +226,6 @@ namespace RoslynTool.CsToLua
                 } else if (IsExtensionMethod) {
                     codeBuilder.Append("callstatic(");
                     codeBuilder.AppendFormat("{0}, \"{1}\", ", ClassKey, mname);
-                    cs2dsl.OutputExpressionSyntax(exp);
-                    prestr = ", ";
                 } else if (IsBasicValueMethod) {
                     string ckey = CalcInvokeTarget(ClassKey, cs2dsl, exp, model);
                     codeBuilder.Append("invokeforbasicvalue(");
@@ -278,7 +286,14 @@ namespace RoslynTool.CsToLua
                     useTypeNameString = true;
                 }
             }
-            cs2dsl.OutputArgumentList(Args, DefaultValueArgs, GenericTypeArgs, ArrayToParams, useTypeNameString, node, ArgConversions.ToArray());
+            if (IsExtensionMethod) {
+                var args = new List<ExpressionSyntax>();
+                args.Add(exp);
+                args.AddRange(Args);
+                cs2dsl.OutputArgumentList(args, DefaultValueArgs, GenericTypeArgs, ArrayToParams, useTypeNameString, node, ArgConversions.ToArray());
+            } else {
+                cs2dsl.OutputArgumentList(Args, DefaultValueArgs, GenericTypeArgs, ArrayToParams, useTypeNameString, node, ArgConversions.ToArray());
+            }
             codeBuilder.Append(")");
         }
 
