@@ -408,8 +408,15 @@ namespace RoslynTool.CsToDsl
                     mi.Init(msym, node);
 
                     string delegationKey = string.Format("{0}:{1}", ClassInfo.GetFullName(msym.ContainingType), manglingName);
-                    string varName = string.Format("__compiler_delegation_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
-                    CodeBuilder.AppendFormat("(function(){{ local({0}); {0} = ", varName);
+                    string varName = string.Format("__compiler_delegation_{0}", GetSourcePosInfo(node));
+                    string varObjName = string.Format("__compiler_delegation_obj_{0}", GetSourcePosInfo(node));
+                    CodeBuilder.Append("(function(){ ");
+                    if (string.IsNullOrEmpty(className)) {
+                        CodeBuilder.AppendFormat("local({0}); {0} = ", varObjName);
+                        OutputExpressionSyntax(node.Expression);
+                        CodeBuilder.Append("; ");
+                    }
+                    CodeBuilder.AppendFormat("local({0}); {0} = ", varName);
 
                     CodeBuilder.Append("(function(");
                     string paramsString = string.Join(", ", mi.ParamNames.ToArray());
@@ -419,7 +426,7 @@ namespace RoslynTool.CsToDsl
                         CodeBuilder.Append("return(");
                     }
                     if (string.IsNullOrEmpty(className)) {
-                        OutputExpressionSyntax(node.Expression);
+                        CodeBuilder.AppendFormat("{0}", varObjName);
                         CodeBuilder.Append(".");
                     } else {
                         CodeBuilder.Append(className);
@@ -430,9 +437,9 @@ namespace RoslynTool.CsToDsl
 
                     CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
                     if (string.IsNullOrEmpty(className)) {
-                        OutputExpressionSyntax(node.Expression);
+                        CodeBuilder.AppendFormat("{0}", varObjName);
                         CodeBuilder.Append(", ");
-                        OutputExpressionSyntax(node.Expression);
+                        CodeBuilder.AppendFormat("{0}", varObjName);
                     } else {
                         CodeBuilder.Append(className);
                         CodeBuilder.Append(", ");
@@ -816,7 +823,7 @@ namespace RoslynTool.CsToDsl
                 bool isExternal = !SymbolTable.Instance.IsCs2DslSymbol(typeSymInfo);
 
                 string ctor = NameMangling(sym);
-                string localName = string.Format("__compiler_newobject_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                string localName = string.Format("__compiler_newobject_{0}", GetSourcePosInfo(node));
                 if (ii.ReturnArgs.Count > 0) {
                     CodeBuilder.Append("(function(){ ");
                     CodeBuilder.AppendFormat("local({0}); {1}", localName, localName);
@@ -899,7 +906,7 @@ namespace RoslynTool.CsToDsl
                         string className = ClassInfo.GetFullName(msym.ContainingType);
 
                         string delegationKey = string.Format("{0}:{1}", className, manglingName);
-                        string varName = string.Format("__compiler_delegation_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                        string varName = string.Format("__compiler_delegation_{0}", GetSourcePosInfo(node));
                         CodeBuilder.AppendFormat("(function(){{ local({0}); {0} = ", varName);
 
                         CodeBuilder.Append("(function(");

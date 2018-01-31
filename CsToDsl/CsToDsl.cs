@@ -682,6 +682,12 @@ namespace RoslynTool.CsToDsl
         private ClassInfo m_LastToplevelClass = null;
         private string m_LastComment = string.Empty;
 
+        internal static string GetSourcePosInfo(SyntaxNode node)
+        {
+            var st = node.GetLocation().GetLineSpan().StartLinePosition;
+            var ed = node.GetLocation().GetLineSpan().EndLinePosition;
+            return string.Format("{0}_{1}_{2}_{3}", st.Line, st.Character, ed.Line, ed.Character);
+        }
         internal static string GetIndentString(int indent)
         {
             const string c_IndentString = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";

@@ -321,7 +321,7 @@ namespace RoslynTool.CsToDsl
                     if (mi.ValueParams.Count > 0) {
                         OutputWrapValueParams(CodeBuilder, mi);
                     }
-                    string varName = string.Format("__compiler_expbody_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                    string varName = string.Format("__compiler_expbody_{0}", GetSourcePosInfo(node));
                     if (mi.ReturnParamNames.Count > 0) {
                         CodeBuilder.AppendFormat("{0}local({1}); {1} = ", GetIndentString(), varName);
                     } else {
@@ -456,7 +456,7 @@ namespace RoslynTool.CsToDsl
                             if (mi.ValueParams.Count > 0) {
                                 OutputWrapValueParams(CodeBuilder, mi);
                             }
-                            string varName = string.Format("__compiler_expbody_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                            string varName = string.Format("__compiler_expbody_{0}", GetSourcePosInfo(node));
                             if (!sym.ReturnsVoid) {
                                 if (mi.ReturnParamNames.Count > 0) {
                                     CodeBuilder.AppendFormat("{0}local({1}); {1} = ", GetIndentString(), varName);
@@ -675,7 +675,7 @@ namespace RoslynTool.CsToDsl
                         }
                         CodeBuilder.AppendLine();
                     }
-                    string varName = string.Format("__compiler_expbody_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                    string varName = string.Format("__compiler_expbody_{0}", GetSourcePosInfo(node));
                     if (mi.ReturnParamNames.Count > 0) {
                         CodeBuilder.AppendFormat("{0}local({1}); {1} = ", GetIndentString(), varName);
                     } else {
@@ -777,7 +777,7 @@ namespace RoslynTool.CsToDsl
                         if (null != accessor.Body) {
                             VisitBlock(accessor.Body);
                         } else if (null != accessor.ExpressionBody) {
-                            string varName = string.Format("__compiler_expbody_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                            string varName = string.Format("__compiler_expbody_{0}", GetSourcePosInfo(node));
                             if (!sym.ReturnsVoid) {
                                 if (mi.ReturnParamNames.Count > 0) {
                                     CodeBuilder.AppendFormat("{0}local({1}); {1} = ", GetIndentString(), varName);
@@ -901,7 +901,7 @@ namespace RoslynTool.CsToDsl
                     --m_Indent;
                     CodeBuilder.AppendFormat("{0}}})", GetIndentString());
                 } else {
-                    string varName = string.Format("__compiler_lambda_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+                    string varName = string.Format("__compiler_lambda_{0}", GetSourcePosInfo(node));
                     CodeBuilder.Append("){ ");
                     if (mi.ReturnParamNames.Count > 0) {
                         CodeBuilder.AppendFormat("local({0}); {0} = ", varName);
@@ -982,7 +982,7 @@ namespace RoslynTool.CsToDsl
         }
         public override void VisitUsingStatement(UsingStatementSyntax node)
         {
-            string varName = string.Format("__compiler_using_{0}", node.GetLocation().GetLineSpan().StartLinePosition.Line);
+            string varName = string.Format("__compiler_using_{0}", GetSourcePosInfo(node));
             if (null != node.Declaration) {
                 VisitVariableDeclaration(node.Declaration);
             } else if (null != node.Expression) {
