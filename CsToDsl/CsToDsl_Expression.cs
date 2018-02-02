@@ -977,15 +977,21 @@ namespace RoslynTool.CsToDsl
                 var rankspec = rankspecs[0];
                 int rank = rankspec.Rank;
                 if (rank >= 1) {
-                    CodeBuilder.Append("(function(){ local{arr = initializer(array){}};");
+                    CodeBuilder.Append("(function(){");
                     int ct = rankspec.Sizes.Count;
                     for (int i = 0; i < ct; ++i) {
                         CodeBuilder.AppendFormat(" local(d{0}); d{0} = ", i);
                         var exp = rankspec.Sizes[i];
                         OutputExpressionSyntax(exp);
-                        CodeBuilder.AppendFormat("; for(i{0} = 1,d{1} ){{ arr{2} = ", i, i, GetArraySubscriptString(i));
+                        if (i == 0) {
+                            CodeBuilder.Append("; local{arr = initarray(d0);}");
+                        }
+                        CodeBuilder.AppendFormat("; for(i{0}, 1, d{1}){{ arr{2} = ", i, i, GetArraySubscriptString(i));
                         if (i < ct - 1) {
-                            CodeBuilder.Append("{};");
+                            CodeBuilder.Append("initarray(");
+                            exp = rankspec.Sizes[i + 1];
+                            OutputExpressionSyntax(exp);
+                            CodeBuilder.Append(");");
                         } else {
                             ITypeSymbol etype = null;
                             if (null != oper && null != oper.ElementType) {
@@ -1008,7 +1014,7 @@ namespace RoslynTool.CsToDsl
                     }
                     CodeBuilder.Append(" return(arr); })()");
                 } else {
-                    CodeBuilder.Append("initializer(array){}");
+                    CodeBuilder.Append("wraparray()");
                 }
             } else {
                 VisitInitializerExpression(node.Initializer);

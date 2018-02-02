@@ -840,6 +840,7 @@ namespace RoslynTool.CsToDsl
             sb.AppendLine("require(\"cs2dsl__utility\");");
             sb.AppendLine("require(\"cs2dsl__attributes\");");
             sb.AppendLine("require(\"cs2dsl__externenums\");");
+            sb.AppendLine("require(\"cs2lua__interfaces\");");
             foreach (string lib in dsllibRefs) {
                 sb.AppendFormat("require(\"{0}\");", lib.ToLower());
                 sb.AppendLine();
@@ -933,6 +934,7 @@ namespace RoslynTool.CsToDsl
                     sb.AppendLine("require(\"cs2dsl__attributes\");");
                 sb.AppendLine("require(\"cs2dsl__namespaces\");");
                 sb.AppendLine("require(\"cs2dsl__externenums\");");
+                sb.AppendLine("require(\"cs2lua__interfaces\");");
                 foreach (string lib in requiredlibs) {
                     sb.AppendFormat("require(\"{0}\");", lib.ToLower());
                     sb.AppendLine();
@@ -940,7 +942,9 @@ namespace RoslynTool.CsToDsl
                 }
 
                 //references
-                if (!SymbolTable.NoAutoRequire) {
+                if (SymbolTable.NoAutoRequire) {
+                    sb.AppendLine("require(\"cs2dsl__custom\");");
+                } else {
                     BuildReferences(sb, key, mci, refs);
                 }
             }

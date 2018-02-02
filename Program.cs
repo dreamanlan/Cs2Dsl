@@ -159,7 +159,7 @@ namespace RoslynTool
                         }
                     }
                 } else {
-                    Console.WriteLine("[Usage]:Cs2Dsl [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-d macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
+                    Console.WriteLine("[Usage]:Cs2Dsl [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-arraylowerboundisone] [-d macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
                     Console.WriteLine("\twhere:");
                     Console.WriteLine("\t\tmacro = c# macro define, used in your csharp code #if/#elif/#else/#endif etc.");
                     Console.WriteLine("\t\tinternpath = only c# source file path in the csproj as intern class, only these classes translate to dsl.");
