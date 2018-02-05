@@ -325,7 +325,7 @@ namespace RoslynTool.CsToDsl
         }
         public override void VisitSwitchStatement(SwitchStatementSyntax node)
         {
-            string varName = string.Format("__compiler_switch_{0}", GetSourcePosInfo(node));
+            string varName = string.Format("__compiler_switch_{0}", GetSourcePosForVar(node));
             SwitchInfo si = new SwitchInfo();
             si.SwitchVarName = varName;
             m_SwitchInfoStack.Push(si);

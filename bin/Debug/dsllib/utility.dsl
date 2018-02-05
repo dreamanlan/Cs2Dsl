@@ -212,3 +212,21 @@ getiterator = function(exp)
 defaultvalue = function(type, typename, isExtern)
 {
 };
+
+dsltry = function(func)
+{
+  func();
+  return [ret, err];
+};
+
+dslcatch = function(handled, ret, err, func)
+{
+  if(!handled && !ret){
+    handled = func(handled, {Message=>err, StackTrace=>""});
+  };
+  return handled;
+};
+
+dslthrow = function(obj)
+{
+};

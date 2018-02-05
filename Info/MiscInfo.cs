@@ -34,7 +34,7 @@ namespace RoslynTool.CsToDsl
             cont.Visit(syntax);
             HaveContinue = cont.ContinueCount > 0;
             HaveBreak = cont.BreakCount > 0;
-            BreakFlagVarName = string.Format("__compiler_continue_{0}", CsDslTranslater.GetSourcePosInfo(syntax));
+            BreakFlagVarName = string.Format("__compiler_continue_{0}", CsDslTranslater.GetSourcePosForVar(syntax));
         }
     }
     internal class SwitchInfo

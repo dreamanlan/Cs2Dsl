@@ -156,6 +156,21 @@
 			}			
 			function getiterator(exp){
 			}
+      function dsltry(func)
+      {
+        func();
+        return [ret, err];
+      };
+      function dslcatch(handled, ret, err, func)
+      {
+        if(!handled && !ret){
+          handled = func(handled, {Message:err, StackTrace:""});
+        };
+        return handled;
+      };
+      function dslthrow(obj)
+      {
+      };
 			
 			function JsConsole(){
 			}

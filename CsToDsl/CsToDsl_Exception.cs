@@ -16,21 +16,39 @@ namespace RoslynTool.CsToDsl
 
         public override void VisitThrowStatement(ThrowStatementSyntax node)
         {
-            //忽略
+            CodeBuilder.AppendFormat("{0}dslthrow(", GetIndentString());
+            IConversionExpression opd = m_Model.GetOperation(node.Expression) as IConversionExpression;
+            OutputExpressionSyntax(node.Expression, opd);
+            CodeBuilder.AppendLine(");");
         }
         public override void VisitTryStatement(TryStatementSyntax node)
         {
             if (null != node.Block) {
-                CodeBuilder.AppendFormat("{0}block{{", GetIndentString());
+                string retVar = string.Format("__compiler_try_ret_{0}", GetSourcePosForVar(node));
+                string errVar = string.Format("__compiler_try_err_{0}", GetSourcePosForVar(node));
+                string handledVar = string.Format("__compiler_try_handled_{0}", GetSourcePosForVar(node));
+
+                CodeBuilder.AppendFormat("{0}local({1}, {2}); {2} = dsltry(function(){{", GetIndentString(), retVar, errVar);
                 CodeBuilder.AppendLine();
                 ++m_Indent;
                 VisitBlock(node.Block);
                 --m_Indent;
-                CodeBuilder.AppendFormat("{0}}};", GetIndentString());
+                CodeBuilder.AppendFormat("{0}}});", GetIndentString());
                 CodeBuilder.AppendLine();
-            }
-            foreach (var clause in node.Catches) {
-                VisitCatchClause(clause);
+                
+                if (node.Catches.Count > 0) {
+                    CodeBuilder.AppendFormat("{0}local({1}); {1} = false;", GetIndentString(), handledVar);
+                    CodeBuilder.AppendLine();
+                    foreach (var clause in node.Catches) {
+                        CodeBuilder.AppendFormat("{0}{1} = dslcatch({1}, {2}, {3},", GetIndentString(), handledVar, retVar, errVar);
+                        CodeBuilder.AppendLine();
+                        ++m_Indent;
+                        VisitCatchClause(clause);
+                        --m_Indent;
+                        CodeBuilder.AppendFormat("{0});", GetIndentString());
+                        CodeBuilder.AppendLine();
+                    }
+                }
             }
             if (null != node.Finally) {
                 VisitFinallyClause(node.Finally);
@@ -38,14 +56,37 @@ namespace RoslynTool.CsToDsl
         }
         public override void VisitCatchClause(CatchClauseSyntax node)
         {
+            string handledVar = string.Format("__compiler_catch_handled_{0}", GetSourcePosForVar(node));
+            CodeBuilder.AppendFormat("{0}(function({1}", GetIndentString(), handledVar);
             if (null != node.Declaration) {
-                VisitCatchDeclaration(node.Declaration);
+                CodeBuilder.Append(", ");
+                CodeBuilder.Append(node.Declaration.Identifier.Text);
             }
+            CodeBuilder.Append("){");
+            CodeBuilder.AppendLine();
+            ++m_Indent;
             if (null != node.Filter) {
-                VisitCatchFilterClause(node.Filter);
+                CodeBuilder.Append("if(");
+                IConversionExpression opd = m_Model.GetOperation(node.Filter.FilterExpression) as IConversionExpression;
+                OutputExpressionSyntax(node.Filter.FilterExpression, opd);
+                CodeBuilder.Append("){");
+                CodeBuilder.AppendLine();
+                ++m_Indent;
             }
             //忽略
-            //VisitBlock(node.Block);
+            VisitBlock(node.Block);
+            CodeBuilder.AppendFormat("{0}{1} = true;", GetIndentString(), handledVar);
+            CodeBuilder.AppendLine();
+            if (null != node.Filter) {
+                --m_Indent;
+                CodeBuilder.AppendFormat("{0}}};", GetIndentString());
+                CodeBuilder.AppendLine();
+            }
+            CodeBuilder.AppendFormat("{0}return {1};", GetIndentString(), handledVar);
+            CodeBuilder.AppendLine();
+            --m_Indent;
+            CodeBuilder.AppendFormat("{0}}})", GetIndentString());
+            CodeBuilder.AppendLine();
         }
         public override void VisitCatchDeclaration(CatchDeclarationSyntax node)
         {
