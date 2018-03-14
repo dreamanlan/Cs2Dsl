@@ -345,6 +345,19 @@ namespace RoslynTool.CsToDsl
                 }
                 var fieldSym = baseSym as IFieldSymbol;
                 if (isStatic && fieldSym.IsStatic || !isStatic && !fieldSym.IsStatic) {
+                    var type = fieldSym.Type;
+                    if (type.TypeKind == TypeKind.TypeParameter && !m_SkipGenericTypeDefine && null != m_GenericTypeInstance) {
+                        for (int i = 0; i < m_GenericTypeInstance.TypeParameters.Length; ++i) {
+                            var t = m_GenericTypeInstance.TypeParameters[i];
+                            var rt = m_GenericTypeInstance.TypeArguments[i];
+                            string name1 = ClassInfo.SpecialGetFullTypeNameWithTypeParameters(t);
+                            string name2 = ClassInfo.SpecialGetFullTypeNameWithTypeParameters(type);
+                            if (name1 == name2) {
+                                type = rt;
+                            }
+                        }
+                    }
+
                     string name = v.Identifier.Text;
                     if (null != v.Initializer) {
                         IConversionExpression opd = null;
@@ -360,7 +373,7 @@ namespace RoslynTool.CsToDsl
                             if (useExplicitTypeParam || createSelf) {
                                 CodeBuilder.AppendFormat("{0}{1}", GetIndentString(), name);
                                 CodeBuilder.Append(" = ");
-                                OutputDefaultValue(fieldSym.Type);
+                                OutputDefaultValue(type);
                                 CodeBuilder.AppendLine(";");
                                 if (isStatic) {
                                     ci.CurrentCodeBuilder = ci.StaticInitializerCodeBuilder;
@@ -371,9 +384,9 @@ namespace RoslynTool.CsToDsl
                                 }
                                 ++m_Indent;
                                 CodeBuilder.AppendFormat("{0}{1}.{2}", GetIndentString(), isStatic ? ci.Key : "this", name);
-                                CodeBuilder.AppendFormat(" = {0}", fieldSym.Type.TypeKind == TypeKind.Delegate ? "delegationwrap(" : string.Empty);
+                                CodeBuilder.AppendFormat(" = {0}", type.TypeKind == TypeKind.Delegate ? "delegationwrap(" : string.Empty);
                                 OutputExpressionSyntax(v.Initializer.Value, opd);
-                                CodeBuilder.AppendFormat("{0};", fieldSym.Type.TypeKind == TypeKind.Delegate ? ")" : string.Empty);
+                                CodeBuilder.AppendFormat("{0};", type.TypeKind == TypeKind.Delegate ? ")" : string.Empty);
                                 CodeBuilder.AppendLine();
                                 --m_Indent;
                                 if (isStatic) {
@@ -384,11 +397,11 @@ namespace RoslynTool.CsToDsl
                                 continue;
                             } else {
                                 CodeBuilder.AppendFormat("{0}{1}", GetIndentString(), name);
-                                CodeBuilder.AppendFormat(" = {0}", fieldSym.Type.TypeKind == TypeKind.Delegate ? "delegationwrap(" : string.Empty);
+                                CodeBuilder.AppendFormat(" = {0}", type.TypeKind == TypeKind.Delegate ? "delegationwrap(" : string.Empty);
                                 OutputExpressionSyntax(v.Initializer.Value, opd);
-                                CodeBuilder.AppendFormat("{0}", fieldSym.Type.TypeKind == TypeKind.Delegate ? ")" : string.Empty);
+                                CodeBuilder.AppendFormat("{0}", type.TypeKind == TypeKind.Delegate ? ")" : string.Empty);
                             }
-                        } else if (fieldSym.Type.TypeKind == TypeKind.Delegate) {
+                        } else if (type.TypeKind == TypeKind.Delegate) {
                             CodeBuilder.AppendFormat("{0}{1}", GetIndentString(), name);
                             CodeBuilder.Append(" = delegationwrap(");
                             if (null != constVal.Value) {
@@ -400,8 +413,8 @@ namespace RoslynTool.CsToDsl
                             CodeBuilder.Append(" = ");
                             if (null != constVal.Value) {
                                 OutputConstValue(constVal.Value, expOper);
-                            } else if (fieldSym.Type.IsValueType) {
-                                OutputDefaultValue(fieldSym.Type);
+                            } else if (type.IsValueType) {
+                                OutputDefaultValue(type);
                                 if (isStatic) {
                                     ci.CurrentCodeBuilder = ci.StaticInitializerCodeBuilder;
                                     ci.ClassSemanticInfo.GenerateBasicCctor = true;
@@ -411,8 +424,8 @@ namespace RoslynTool.CsToDsl
                                 }
                                 ++m_Indent;
                                 CodeBuilder.AppendFormat("{0}{1}.{2}", GetIndentString(), isStatic ? ci.Key : "this", name);
-                                string fullTypeName = ClassInfo.GetFullName(fieldSym.Type);
-                                if (SymbolTable.Instance.IsCs2DslSymbol(fieldSym.Type)) {
+                                string fullTypeName = ClassInfo.GetFullName(type);
+                                if (SymbolTable.Instance.IsCs2DslSymbol(type)) {
                                     CodeBuilder.AppendFormat(" = new {0}();", fullTypeName);
                                 } else {
                                     CodeBuilder.AppendFormat(" = newexternobject({0}, \"{0}\", null, null);", fullTypeName);
@@ -425,19 +438,19 @@ namespace RoslynTool.CsToDsl
                                     ci.CurrentCodeBuilder = ci.InstanceFieldCodeBuilder;
                                 }
                             } else {
-                                OutputDefaultValue(fieldSym.Type);                            
+                                OutputDefaultValue(type);                            
 							}
                         }
-                    } else if (fieldSym.Type.TypeKind == TypeKind.Delegate) {
+                    } else if (type.TypeKind == TypeKind.Delegate) {
                         CodeBuilder.AppendFormat("{0}{1}", GetIndentString(), name);
                         CodeBuilder.Append(" = wrapdelegation{}");
-                    } else if (fieldSym.Type.IsValueType) {
-                        if (SymbolTable.IsBasicType(fieldSym.Type)) {
+                    } else if (type.IsValueType) {
+                        if (SymbolTable.IsBasicType(type)) {
                             CodeBuilder.AppendFormat("{0}{1} = ", GetIndentString(), name);
-                            OutputDefaultValue(fieldSym.Type);
+                            OutputDefaultValue(type);
                         } else {
                             CodeBuilder.AppendFormat("{0}{1} = ", GetIndentString(), name);
-                            OutputDefaultValue(fieldSym.Type);
+                            OutputDefaultValue(type);
                             if (isStatic) {
                                 ci.CurrentCodeBuilder = ci.StaticInitializerCodeBuilder;
                                 ci.ClassSemanticInfo.GenerateBasicCctor = true;
@@ -447,8 +460,8 @@ namespace RoslynTool.CsToDsl
                             }
                             ++m_Indent;
                             CodeBuilder.AppendFormat("{0}{1}.{2}", GetIndentString(), isStatic ? ci.Key : "this", name);
-                            string fullTypeName = ClassInfo.GetFullName(fieldSym.Type);
-                            if (SymbolTable.Instance.IsCs2DslSymbol(fieldSym.Type)) {
+                            string fullTypeName = ClassInfo.GetFullName(type);
+                            if (SymbolTable.Instance.IsCs2DslSymbol(type)) {
                                 CodeBuilder.AppendFormat(" = new {0}();", fullTypeName);
                             } else {
                                 CodeBuilder.AppendFormat(" = newexternobject({0}, \"{0}\", null, null);", fullTypeName);
@@ -463,7 +476,7 @@ namespace RoslynTool.CsToDsl
                         }
                     } else {
                         CodeBuilder.AppendFormat("{0}{1} = ", GetIndentString(), name);
-                        OutputDefaultValue(fieldSym.Type);
+                        OutputDefaultValue(type);
                     }
                     CodeBuilder.Append(";");
                     CodeBuilder.AppendLine();
