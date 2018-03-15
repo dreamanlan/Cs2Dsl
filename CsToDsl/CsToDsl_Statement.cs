@@ -204,7 +204,7 @@ namespace RoslynTool.CsToDsl
                 }
                 OutputExpressionSyntax(node.Condition, opd);
             } else {
-                CodeBuilder.AppendLine("true");
+                CodeBuilder.Append("true");
             }
             CodeBuilder.AppendLine(" ){");
             if (ci.HaveContinue) {
