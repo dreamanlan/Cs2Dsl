@@ -23,7 +23,7 @@ namespace RoslynTool.CsToDsl
     }
     public static class CsToDslProcessor
     {
-        public static ExitCode Process(string srcFile, IList<string> macros, IList<string> ignoredPath, IList<string> externPath, IList<string> internPath, IDictionary<string, string> _refByNames, IDictionary<string, string> _refByPaths, bool enableInherit, bool enableLinq, bool outputResult, bool parallel)
+        public static ExitCode Process(string srcFile, IList<string> macros, IList<string> undefMacros, IList<string> ignoredPath, IList<string> externPath, IList<string> internPath, IDictionary<string, string> _refByNames, IDictionary<string, string> _refByPaths, bool enableInherit, bool enableLinq, bool outputResult, bool parallel)
         {
             const string c_OutputExt = "dsl";
             List<string> preprocessors = new List<string>(macros);
@@ -119,6 +119,10 @@ namespace RoslynTool.CsToDsl
                 }
             } else {
                 files.Add(srcFile);
+            }
+
+            foreach(string m in undefMacros){
+                preprocessors.Remove(m);
             }
 
             bool haveError = false;

@@ -18,6 +18,7 @@ namespace RoslynTool
             try {
                 string file = "test.cs";
                 List<string> macros = new List<string>();
+                List<string> undefMacros = new List<string>();
                 List<string> ignoredPath = new List<string>();
                 List<string> externPath = new List<string>();
                 List<string> internPath = new List<string>();
@@ -34,6 +35,14 @@ namespace RoslynTool
                                 string arg = args[i + 1];
                                 if (!arg.StartsWith("-")) {
                                     macros.Add(arg);
+                                    ++i;
+                                }
+                            }
+                        } else if (0 == string.Compare(args[i], "-u", true)) {
+                            if (i < args.Length - 1) {
+                                string arg = args[i + 1];
+                                if (!arg.StartsWith("-")) {
+                                    undefMacros.Add(arg);
                                     ++i;
                                 }
                             }
@@ -159,7 +168,7 @@ namespace RoslynTool
                         }
                     }
                 } else {
-                    Console.WriteLine("[Usage]:Cs2Dsl [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-arraylowerboundisone] [-d macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
+                    Console.WriteLine("[Usage]:Cs2Dsl [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-arraylowerboundisone] [-d macro] [-u macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
                     Console.WriteLine("\twhere:");
                     Console.WriteLine("\t\tmacro = c# macro define, used in your csharp code #if/#elif/#else/#endif etc.");
                     Console.WriteLine("\t\tinternpath = only c# source file path in the csproj as intern class, only these classes translate to dsl.");
@@ -176,7 +185,7 @@ namespace RoslynTool
                 }
                 if (File.Exists(file)) {
                     var stopwatch = Stopwatch.StartNew();
-                    var result = (int)CsToDslProcessor.Process(file, macros, ignoredPath, externPath, internPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult, parallel);
+                    var result = (int)CsToDslProcessor.Process(file, macros, undefMacros, ignoredPath, externPath, internPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult, parallel);
                     stopwatch.Stop();
                     Console.WriteLine("RunningTime: {0}s", stopwatch.Elapsed.TotalSeconds);
                     return result;
