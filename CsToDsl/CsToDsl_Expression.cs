@@ -35,7 +35,7 @@ namespace RoslynTool.CsToDsl
                 var castOper = oper as IConversionExpression;
                 if (null != castOper) {
                     var opd = castOper.Operand as IConversionExpression;
-                    InvocationInfo ii = new InvocationInfo();
+                    InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                     var arglist = new List<ExpressionSyntax>() { node.Left };
                     ii.Init(msym, arglist, m_Model, opd);
                     OutputOperatorInvoke(ii, node);
@@ -44,7 +44,7 @@ namespace RoslynTool.CsToDsl
                     var lopd = null == boper ? null : boper.LeftOperand as IConversionExpression;
                     var ropd = null == boper ? null : boper.RightOperand as IConversionExpression;
 
-                    InvocationInfo ii = new InvocationInfo();
+                    InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                     var arglist = new List<ExpressionSyntax>() { node.Left, node.Right };
                     ii.Init(msym, arglist, m_Model, lopd, ropd);
                     OutputOperatorInvoke(ii, node);
@@ -195,7 +195,7 @@ namespace RoslynTool.CsToDsl
             }
             if (null != unaryOper && unaryOper.UsesOperatorMethod) {
                 IMethodSymbol msym = unaryOper.OperatorMethod;
-                InvocationInfo ii = new InvocationInfo();
+                InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                 var arglist = new List<ExpressionSyntax>() { node.Operand };
                 ii.Init(msym, arglist, m_Model, opd);
                 OutputOperatorInvoke(ii, node);
@@ -204,7 +204,7 @@ namespace RoslynTool.CsToDsl
                 OutputExpressionSyntax(node.Operand, opd);
                 CodeBuilder.Append(" = ");
                 IMethodSymbol msym = assignOper.OperatorMethod;
-                InvocationInfo ii = new InvocationInfo();
+                InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                 var arglist = new List<ExpressionSyntax>() { node.Operand };
                 ii.Init(msym, arglist, m_Model, opd);
                 OutputOperatorInvoke(ii, node);
@@ -253,7 +253,7 @@ namespace RoslynTool.CsToDsl
             }
             if (null != assignOper && assignOper.UsesOperatorMethod) {
                 IMethodSymbol msym = assignOper.OperatorMethod;
-                InvocationInfo ii = new InvocationInfo();
+                InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                 var arglist = new List<ExpressionSyntax>() { node.Operand };
                 ii.Init(msym, arglist, m_Model, opd);
                 OutputOperatorInvoke(ii, node);
@@ -291,7 +291,7 @@ namespace RoslynTool.CsToDsl
             var opd = oper.Operand as IConversionExpression;
             if (null != oper && oper.UsesOperatorMethod) {
                 IMethodSymbol msym = oper.OperatorMethod;
-                InvocationInfo ii = new InvocationInfo();
+                InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                 var arglist = new List<ExpressionSyntax>() { node.Expression };
                 ii.Init(msym, arglist, m_Model, opd);
                 AddReferenceAndTryDeriveGenericTypeInstance(ci, oper.Type);
@@ -520,7 +520,7 @@ namespace RoslynTool.CsToDsl
                 }
                 string manglingName = NameMangling(psym.GetMethod);
                 CodeBuilder.AppendFormat("\"{0}\", ", manglingName);
-                InvocationInfo ii = new InvocationInfo();
+                InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                 ii.Init(psym.GetMethod, node.ArgumentList, m_Model);
                 OutputArgumentList(ii.Args, ii.DefaultValueArgs, ii.GenericTypeArgs, ii.ArrayToParams, false, node, ii.ArgConversions.ToArray());
                 CodeBuilder.Append(")");
@@ -573,7 +573,7 @@ namespace RoslynTool.CsToDsl
                     }
                     string manglingName = NameMangling(psym.GetMethod);
                     CodeBuilder.AppendFormat("\"{0}\", ", manglingName);
-                    InvocationInfo ii = new InvocationInfo();
+                    InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                     List<ExpressionSyntax> args = new List<ExpressionSyntax> { node.WhenNotNull };
                     ii.Init(psym.GetMethod, args, m_Model);
                     OutputArgumentList(ii.Args, ii.DefaultValueArgs, ii.GenericTypeArgs, ii.ArrayToParams, false, elementBinding, ii.ArgConversions.ToArray());
@@ -815,7 +815,7 @@ namespace RoslynTool.CsToDsl
                 string fullTypeName = ClassInfo.GetFullName(typeSymInfo);
 
                 //处理ref/out参数
-                InvocationInfo ii = new InvocationInfo();
+                InvocationInfo ii = new InvocationInfo(GetCurMethodSemanticInfo());
                 ii.Init(sym, node.ArgumentList, m_Model);
                 AddReferenceAndTryDeriveGenericTypeInstance(ci, sym);
 

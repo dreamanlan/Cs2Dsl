@@ -33,6 +33,16 @@ namespace RoslynTool.CsToDsl
         internal ExpressionSyntax SecondRefArray = null;
 
         internal IMethodSymbol MethodSymbol = null;
+        internal IMethodSymbol CallerMethodSymbol = null;
+        internal INamedTypeSymbol CallerTypeSymbol = null;
+
+        internal InvocationInfo(IMethodSymbol caller)
+        {
+            if (null != caller) {
+                CallerMethodSymbol = caller;
+                CallerTypeSymbol = caller.ContainingType;
+            }
+        }
 
         internal void Init(IMethodSymbol sym, ArgumentListSyntax argList, SemanticModel model)
         {
