@@ -156,6 +156,10 @@ namespace RoslynTool.CsToDsl
             mi.Init(declSym, node);
             m_MethodInfoStack.Push(mi);
 
+            TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+            tryCatch.Visit(node);
+            mi.ExistTryCatch = tryCatch.Exist;
+
             string manglingName = NameMangling(declSym);
             if (isStatic) {
                 ci.ExistStaticConstructor = true;
@@ -307,6 +311,10 @@ namespace RoslynTool.CsToDsl
                     mi.Init(sym, node);
                     m_MethodInfoStack.Push(mi);
 
+                    TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+                    tryCatch.Visit(node);
+                    mi.ExistTryCatch = tryCatch.Exist;
+
                     string manglingName = NameMangling(sym);
                     string paramStr = string.Join(", ", mi.ParamNames.ToArray());
                     if (!declSym.IsStatic) {
@@ -415,6 +423,10 @@ namespace RoslynTool.CsToDsl
                         mi.Init(sym, accessor);
                         m_MethodInfoStack.Push(mi);
 
+                        TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+                        tryCatch.Visit(node);
+                        mi.ExistTryCatch = tryCatch.Exist;
+
                         string manglingName = NameMangling(sym);
                         string paramStr = string.Join(", ", mi.ParamNames.ToArray());
                         if (!declSym.IsStatic) {
@@ -429,6 +441,15 @@ namespace RoslynTool.CsToDsl
                         bool isStatic = declSym.IsStatic;
                         string dslModule = ClassInfo.GetAttributeArgument<string>(sym, "Cs2Dsl.TranslateToAttribute", 0);
                         string dslFuncName = ClassInfo.GetAttributeArgument<string>(sym, "Cs2Dsl.TranslateToAttribute", 1);
+                        if (string.IsNullOrEmpty(dslModule) && string.IsNullOrEmpty(dslFuncName)) {
+                            if (!sym.ReturnsVoid && mi.ExistTryCatch) {
+                                string retVar = string.Format("__compiler_method_ret_{0}", GetSourcePosForVar(node));
+                                mi.ReturnVarName = retVar;
+
+                                CodeBuilder.AppendFormat("{0}local({1}); {1} = nil;", GetIndentString(), retVar);
+                                CodeBuilder.AppendLine();
+                            }
+                        }
                         if (!string.IsNullOrEmpty(dslModule) || !string.IsNullOrEmpty(dslFuncName)) {
                             if (!string.IsNullOrEmpty(dslModule)) {
                                 SymbolTable.Instance.AddRequire(ci.Key, dslModule);
@@ -452,6 +473,17 @@ namespace RoslynTool.CsToDsl
                                 OutputWrapValueParams(CodeBuilder, mi);
                             }
                             VisitBlock(accessor.Body);
+                            if (!mi.ExistTopLevelReturn) {
+                                if (!sym.ReturnsVoid) {
+                                    if (mi.ExistTryCatch) {
+                                        CodeBuilder.AppendFormat("{0}return({1}, {2});", GetIndentString(), mi.ReturnVarName, string.Join(", ", mi.ReturnParamNames));
+                                        CodeBuilder.AppendLine();
+                                    } else {
+                                        CodeBuilder.AppendFormat("{0}return(nil);", GetIndentString());
+                                        CodeBuilder.AppendLine();
+                                    }
+                                }
+                            }
                         } else if (null != accessor.ExpressionBody) {
                             if (mi.ValueParams.Count > 0) {
                                 OutputWrapValueParams(CodeBuilder, mi);
@@ -547,6 +579,10 @@ namespace RoslynTool.CsToDsl
                     mi.Init(sym, accessor);
                     m_MethodInfoStack.Push(mi);
 
+                    TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+                    tryCatch.Visit(node);
+                    mi.ExistTryCatch = tryCatch.Exist;
+
                     string manglingName = NameMangling(sym);
                     string keyword = accessor.Keyword.Text;
                     string paramStr = string.Join(", ", mi.ParamNames.ToArray());
@@ -566,11 +602,7 @@ namespace RoslynTool.CsToDsl
                         if (!string.IsNullOrEmpty(dslModule)) {
                             SymbolTable.Instance.AddRequire(ci.Key, dslModule);
                         }
-                        if (sym.ReturnsVoid && mi.ReturnParamNames.Count <= 0) {
-                            CodeBuilder.AppendFormat("{0}{1}({2}", GetIndentString(), dslFuncName, isStatic ? string.Empty : "this");
-                        } else {
-                            CodeBuilder.AppendFormat("{0}return({1}({2}", GetIndentString(), dslFuncName, isStatic ? string.Empty : "this");
-                        }
+                        CodeBuilder.AppendFormat("{0}{1}({2}", GetIndentString(), dslFuncName, isStatic ? string.Empty : "this");
                         if (mi.ParamNames.Count > 0) {
                             if (!isStatic) {
                                 CodeBuilder.Append(", ");
@@ -651,6 +683,10 @@ namespace RoslynTool.CsToDsl
                     mi.Init(sym, node);
                     m_MethodInfoStack.Push(mi);
 
+                    TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+                    tryCatch.Visit(node);
+                    mi.ExistTryCatch = tryCatch.Exist;
+
                     string manglingName = NameMangling(sym);
                     string paramStr = string.Join(", ", mi.ParamNames.ToArray());
                     if (!declSym.IsStatic) {
@@ -719,6 +755,10 @@ namespace RoslynTool.CsToDsl
                     mi.Init(sym, accessor);
                     m_MethodInfoStack.Push(mi);
 
+                    TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+                    tryCatch.Visit(node);
+                    mi.ExistTryCatch = tryCatch.Exist;
+
                     string manglingName = NameMangling(sym);
                     string keyword = accessor.Keyword.Text;
                     CodeBuilder.AppendFormat("{0}{1} = {2}function(this, {3}){{", GetIndentString(), manglingName, mi.ExistYield ? "wrapenumerable(" : string.Empty, string.Join(", ", mi.ParamNames.ToArray()));
@@ -727,6 +767,15 @@ namespace RoslynTool.CsToDsl
                     bool isStatic = declSym.IsStatic;
                     string dslModule = ClassInfo.GetAttributeArgument<string>(sym, "Cs2Dsl.TranslateToAttribute", 0);
                     string dslFuncName = ClassInfo.GetAttributeArgument<string>(sym, "Cs2Dsl.TranslateToAttribute", 1);
+                    if (string.IsNullOrEmpty(dslModule) && string.IsNullOrEmpty(dslFuncName)) {
+                        if (!sym.ReturnsVoid && mi.ExistTryCatch) {
+                            string retVar = string.Format("__compiler_method_ret_{0}", GetSourcePosForVar(node));
+                            mi.ReturnVarName = retVar;
+
+                            CodeBuilder.AppendFormat("{0}local({1}); {1} = nil;", GetIndentString(), retVar);
+                            CodeBuilder.AppendLine();
+                        }
+                    }
                     if (!string.IsNullOrEmpty(dslModule) || !string.IsNullOrEmpty(dslFuncName)) {
                         if (!string.IsNullOrEmpty(dslModule)) {
                             SymbolTable.Instance.AddRequire(ci.Key, dslModule);
@@ -776,6 +825,25 @@ namespace RoslynTool.CsToDsl
                         }
                         if (null != accessor.Body) {
                             VisitBlock(accessor.Body);
+                            if (!mi.ExistTopLevelReturn) {
+                                if (sym.ReturnsVoid) {
+                                    if (mi.ReturnParamNames.Count > 0) {
+                                        CodeBuilder.AppendFormat("{0}return({1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                                        CodeBuilder.AppendLine();
+                                    }
+                                } else {
+                                    if (mi.ExistTryCatch) {
+                                        CodeBuilder.AppendFormat("{0}return({1}, {2});", GetIndentString(), mi.ReturnVarName, string.Join(", ", mi.ReturnParamNames));
+                                        CodeBuilder.AppendLine();
+                                    } else if (mi.ReturnParamNames.Count > 0) {
+                                        CodeBuilder.AppendFormat("{0}return(nil, {1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                                        CodeBuilder.AppendLine();
+                                    } else {
+                                        CodeBuilder.AppendFormat("{0}return(nil);", GetIndentString());
+                                        CodeBuilder.AppendLine();
+                                    }
+                                }
+                            }
                         } else if (null != accessor.ExpressionBody) {
                             string varName = string.Format("__compiler_expbody_{0}", GetSourcePosForVar(node));
                             if (!sym.ReturnsVoid) {
@@ -875,11 +943,22 @@ namespace RoslynTool.CsToDsl
                 mi.Init(sym, node);
                 m_MethodInfoStack.Push(mi);
 
+                TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+                tryCatch.Visit(node);
+                mi.ExistTryCatch = tryCatch.Exist;
+
                 CodeBuilder.Append("(function(");
                 CodeBuilder.Append(string.Join(", ", mi.ParamNames.ToArray()));
                 if (node.Body is BlockSyntax) {
                     CodeBuilder.AppendLine("){");
                     ++m_Indent;
+                    if (!sym.ReturnsVoid && mi.ExistTryCatch) {
+                        string retVar = string.Format("__compiler_method_ret_{0}", GetSourcePosForVar(node));
+                        mi.ReturnVarName = retVar;
+
+                        CodeBuilder.AppendFormat("{0}local({1}); {1} = nil;", GetIndentString(), retVar);
+                        CodeBuilder.AppendLine();
+                    }
                     if (mi.ValueParams.Count > 0) {
                         OutputWrapValueParams(CodeBuilder, mi);
                     }
@@ -894,9 +973,24 @@ namespace RoslynTool.CsToDsl
                         CodeBuilder.AppendLine();
                     }
                     node.Body.Accept(this);
-                    if (!mi.ExistTopLevelReturn && mi.ReturnParamNames.Count > 0) {
-                        CodeBuilder.AppendFormat("{0}return({1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
-                        CodeBuilder.AppendLine();
+                    if (!mi.ExistTopLevelReturn) {
+                        if (sym.ReturnsVoid) {
+                            if (mi.ReturnParamNames.Count > 0) {
+                                CodeBuilder.AppendFormat("{0}return({1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                                CodeBuilder.AppendLine();
+                            }
+                        } else {
+                            if (mi.ExistTryCatch) {
+                                CodeBuilder.AppendFormat("{0}return({1}, {2});", GetIndentString(), mi.ReturnVarName, string.Join(", ", mi.ReturnParamNames));
+                                CodeBuilder.AppendLine();
+                            } else if (mi.ReturnParamNames.Count > 0) {
+                                CodeBuilder.AppendFormat("{0}return(nil, {1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                                CodeBuilder.AppendLine();
+                            } else {
+                                CodeBuilder.AppendFormat("{0}return(nil);", GetIndentString());
+                                CodeBuilder.AppendLine();
+                            }
+                        }
                     }
                     --m_Indent;
                     CodeBuilder.AppendFormat("{0}}})", GetIndentString());
@@ -943,6 +1037,10 @@ namespace RoslynTool.CsToDsl
                 mi.Init(sym, node);
                 m_MethodInfoStack.Push(mi);
 
+                TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+                tryCatch.Visit(node);
+                mi.ExistTryCatch = tryCatch.Exist;
+
                 CodeBuilder.Append("(function(");
                 int ct = sym.Parameters.Length;
                 if (ct > 0) {
@@ -956,7 +1054,33 @@ namespace RoslynTool.CsToDsl
                 }
                 CodeBuilder.AppendLine("){");
                 ++m_Indent;
+                if (!sym.ReturnsVoid && mi.ExistTryCatch) {
+                    string retVar = string.Format("__compiler_method_ret_{0}", GetSourcePosForVar(node));
+                    mi.ReturnVarName = retVar;
+
+                    CodeBuilder.AppendFormat("{0}local({1}); {1} = nil;", GetIndentString(), retVar);
+                    CodeBuilder.AppendLine();
+                }
                 node.Body.Accept(this);
+                if (!mi.ExistTopLevelReturn) {
+                    if (sym.ReturnsVoid) {
+                        if (mi.ReturnParamNames.Count > 0) {
+                            CodeBuilder.AppendFormat("{0}return({1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                            CodeBuilder.AppendLine();
+                        }
+                    } else {
+                        if (mi.ExistTryCatch) {
+                            CodeBuilder.AppendFormat("{0}return({1}, {2});", GetIndentString(), mi.ReturnVarName, string.Join(", ", mi.ReturnParamNames));
+                            CodeBuilder.AppendLine();
+                        } else if (mi.ReturnParamNames.Count > 0) {
+                            CodeBuilder.AppendFormat("{0}return(nil, {1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                            CodeBuilder.AppendLine();
+                        } else {
+                            CodeBuilder.AppendFormat("{0}return(nil);", GetIndentString());
+                            CodeBuilder.AppendLine();
+                        }
+                    }
+                }
                 --m_Indent;
                 CodeBuilder.AppendFormat("{0}}})", GetIndentString());
 

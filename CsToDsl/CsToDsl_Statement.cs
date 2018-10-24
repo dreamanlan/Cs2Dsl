@@ -73,40 +73,55 @@ namespace RoslynTool.CsToDsl
             mi.ExistTopLevelReturn = IsLastNodeOfMethod(node);
             
             bool isLastNode = IsLastNodeOfParent(node);
-            if (!isLastNode) {
+            if (!isLastNode || mi.TryCatchLayer > 0) {
                 CodeBuilder.AppendFormat("{0}block{{", GetIndentString());
                 CodeBuilder.AppendLine();
             }
 
-            string prestr;
-            if (mi.SemanticInfo.MethodKind == MethodKind.Constructor) {
-                CodeBuilder.AppendFormat("{0}return(this", GetIndentString());
-                prestr = ", ";
-            } else {
-                CodeBuilder.AppendFormat("{0}return(", GetIndentString());
-                prestr = string.Empty;
-            }
-            if (null != node.Expression) {
-                CodeBuilder.Append(prestr);
-                IConversionExpression opd = null;
-                var iret = m_Model.GetOperation(node) as IReturnStatement;
-                if (null != iret) {
-                    opd = iret.ReturnedValue as IConversionExpression;
+            if (mi.TryCatchLayer > 0) {
+                if (null != node.Expression) {
+                    IConversionExpression opd = null;
+                    var iret = m_Model.GetOperation(node) as IReturnStatement;
+                    if (null != iret) {
+                        opd = iret.ReturnedValue as IConversionExpression;
+                    }
+                    CodeBuilder.AppendFormat("{0}{1} = ", GetIndentString(), mi.ReturnVarName);
+                    OutputExpressionSyntax(node.Expression, opd);
+                    CodeBuilder.AppendLine(";");
                 }
-                OutputExpressionSyntax(node.Expression, opd);
-                prestr = ", ";
-            }
-            var names = mi.ReturnParamNames;
-            if (names.Count > 0) {
-                for (int i = 0; i < names.Count; ++i) {
+                CodeBuilder.AppendFormat("{0}return(true);", GetIndentString());
+                CodeBuilder.AppendLine();
+            } else {
+                string prestr;
+                if (mi.SemanticInfo.MethodKind == MethodKind.Constructor) {
+                    CodeBuilder.AppendFormat("{0}return(this", GetIndentString());
+                    prestr = ", ";
+                } else {
+                    CodeBuilder.AppendFormat("{0}return(", GetIndentString());
+                    prestr = string.Empty;
+                }
+                if (null != node.Expression) {
                     CodeBuilder.Append(prestr);
-                    CodeBuilder.Append(names[i]);
+                    IConversionExpression opd = null;
+                    var iret = m_Model.GetOperation(node) as IReturnStatement;
+                    if (null != iret) {
+                        opd = iret.ReturnedValue as IConversionExpression;
+                    }
+                    OutputExpressionSyntax(node.Expression, opd);
                     prestr = ", ";
                 }
+                var names = mi.ReturnParamNames;
+                if (names.Count > 0) {
+                    for (int i = 0; i < names.Count; ++i) {
+                        CodeBuilder.Append(prestr);
+                        CodeBuilder.Append(names[i]);
+                        prestr = ", ";
+                    }
+                }
+                CodeBuilder.AppendLine(");");
             }
-            CodeBuilder.AppendLine(");");
 
-            if (!isLastNode) {
+            if (!isLastNode || mi.TryCatchLayer > 0) {
                 CodeBuilder.AppendFormat("{0}}};", GetIndentString());
                 CodeBuilder.AppendLine();
             }
@@ -352,6 +367,7 @@ namespace RoslynTool.CsToDsl
                     }
                 }
             }
+            bool first = true;
             for (int i = 0; i < ct; ++i) {
                 var section = node.Sections[i];
                 if (section == defaultSection) {
@@ -369,7 +385,7 @@ namespace RoslynTool.CsToDsl
                     ci.IsIgnoreBreak = true;
                 }
 
-                CodeBuilder.AppendFormat("{0}{1} ", GetIndentString(), i == 0 ? "if(" : "}elseif(");
+                CodeBuilder.AppendFormat("{0}{1} ", GetIndentString(), first ? "if(" : "}elseif(");
                 int lct = section.Labels.Count;
                 for (int j = 0; j < lct; ++j) {
                     var label = section.Labels[j] as CaseSwitchLabelSyntax;
@@ -407,6 +423,7 @@ namespace RoslynTool.CsToDsl
                 }
 
                 m_ContinueInfoStack.Pop();
+                first = false;
             }
             if (null != defaultSection) {
                 ContinueInfo ci = new ContinueInfo();
@@ -517,6 +534,10 @@ namespace RoslynTool.CsToDsl
 
                 CodeBuilder.AppendFormat("{0}return(null);", GetIndentString());
                 CodeBuilder.AppendLine();
+
+                if (IsLastNodeOfMethod(node)) {
+                    mi.ExistTopLevelReturn = true;
+                }
 
                 if (!isLastNode) {
                     CodeBuilder.AppendFormat("{0}}};", GetIndentString());

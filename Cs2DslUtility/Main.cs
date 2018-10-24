@@ -3,6 +3,10 @@
 namespace Cs2Dsl
 {
     [System.AttributeUsage(System.AttributeTargets.All)]
+    public sealed class DontCheckAttribute : System.Attribute
+    { }
+
+    [System.AttributeUsage(System.AttributeTargets.All)]
     public sealed class IgnoreAttribute : System.Attribute
     { }
 

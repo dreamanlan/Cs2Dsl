@@ -228,6 +228,10 @@ namespace RoslynTool.CsToDsl
             mi.Init(declSym, node);
             m_MethodInfoStack.Push(mi);
 
+            TryCatchAnalysis tryCatch = new TryCatchAnalysis();
+            tryCatch.Visit(node);
+            mi.ExistTryCatch = tryCatch.Exist;
+            
             string manglingName = NameMangling(declSym);
             bool isExtension = declSym.IsExtensionMethod;
             if (isExtension && declSym.Parameters.Length > 0) {
@@ -245,21 +249,31 @@ namespace RoslynTool.CsToDsl
             CodeBuilder.Append("){");
             CodeBuilder.AppendLine();
             ++m_Indent;
-            if (mi.ValueParams.Count > 0) {
-                OutputWrapValueParams(CodeBuilder, mi);
-            }
-            if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
-                if (mi.ParamsIsValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
-                } else if (mi.ParamsIsExternValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
-                } else {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
-                }
-                CodeBuilder.AppendLine();
-            }
+
             string dslModule = ClassInfo.GetAttributeArgument<string>(declSym, "Cs2Dsl.TranslateToAttribute", 0);
             string dslFuncName = ClassInfo.GetAttributeArgument<string>(declSym, "Cs2Dsl.TranslateToAttribute", 1);
+            if (string.IsNullOrEmpty(dslModule) && string.IsNullOrEmpty(dslFuncName)) {
+                if (!declSym.ReturnsVoid && mi.ExistTryCatch) {
+                    string retVar = string.Format("__compiler_method_ret_{0}", GetSourcePosForVar(node));
+                    mi.ReturnVarName = retVar;
+
+                    CodeBuilder.AppendFormat("{0}local({1}); {1} = nil;", GetIndentString(), retVar);
+                    CodeBuilder.AppendLine();
+                }
+                if (mi.ValueParams.Count > 0) {
+                    OutputWrapValueParams(CodeBuilder, mi);
+                }
+                if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
+                    if (mi.ParamsIsValueType) {
+                        CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                    } else if (mi.ParamsIsExternValueType) {
+                        CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                    } else {
+                        CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                    }
+                    CodeBuilder.AppendLine();
+                }
+            }
             if (!string.IsNullOrEmpty(dslModule) || !string.IsNullOrEmpty(dslFuncName)) {
                 if (!string.IsNullOrEmpty(dslModule)) {
                     SymbolTable.Instance.AddRequire(ci.Key, dslModule);
@@ -281,9 +295,24 @@ namespace RoslynTool.CsToDsl
                 CodeBuilder.AppendLine(");");
             } else if (null != body) {
                 VisitBlock(body);
-                if (!mi.ExistTopLevelReturn && mi.ReturnParamNames.Count > 0) {
-                    CodeBuilder.AppendFormat("{0}return({1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
-                    CodeBuilder.AppendLine();
+                if (!mi.ExistTopLevelReturn) {
+                    if (declSym.ReturnsVoid) {
+                        if (mi.ReturnParamNames.Count > 0) {
+                            CodeBuilder.AppendFormat("{0}return({1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                            CodeBuilder.AppendLine();
+                        }
+                    } else {
+                        if (mi.ExistTryCatch) {
+                            CodeBuilder.AppendFormat("{0}return({1}, {2});", GetIndentString(), mi.ReturnVarName, string.Join(", ", mi.ReturnParamNames));
+                            CodeBuilder.AppendLine();
+                        } else if (mi.ReturnParamNames.Count > 0) {
+                            CodeBuilder.AppendFormat("{0}return(nil, {1});", GetIndentString(), string.Join(", ", mi.ReturnParamNames));
+                            CodeBuilder.AppendLine();
+                        } else {
+                            CodeBuilder.AppendFormat("{0}return(nil);", GetIndentString());
+                            CodeBuilder.AppendLine();
+                        }
+                    }
                 }
             } else if (null != expressionBody) {
                 string varName = string.Format("__compiler_expbody_{0}", GetSourcePosForVar(node));
@@ -318,7 +347,7 @@ namespace RoslynTool.CsToDsl
                     if (mi.ReturnParamNames.Count > 0) {
                         CodeBuilder.AppendFormat("; return({0}, {1})", varName, string.Join(", ", mi.ReturnParamNames));
                     } else {
-                        CodeBuilder.Append(")");
+                        CodeBuilder.AppendFormat("; return({0})", varName);
                     }
                     CodeBuilder.AppendLine(";");
                 }

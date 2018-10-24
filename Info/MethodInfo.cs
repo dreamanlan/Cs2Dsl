@@ -14,6 +14,7 @@ namespace RoslynTool.CsToDsl
     {
         internal List<string> ParamNames = new List<string>();
         internal List<string> ReturnParamNames = new List<string>();
+        internal List<string> OutParamNames = new List<string>();
         internal HashSet<int> ValueParams = new HashSet<int>();
         internal HashSet<int> ExternValueParams = new HashSet<int>();
         internal List<string> GenericTypeTypeParamNames = new List<string>();
@@ -24,6 +25,10 @@ namespace RoslynTool.CsToDsl
         internal bool ExistYield = false;
         internal bool ExistTopLevelReturn = false;
 
+        internal bool ExistTryCatch = false;
+        internal int TryCatchLayer = 0;
+        internal string ReturnVarName = string.Empty;
+
         internal IMethodSymbol SemanticInfo = null;
         internal IPropertySymbol PropertySemanticInfo = null;
 
@@ -31,9 +36,14 @@ namespace RoslynTool.CsToDsl
         {
             ParamNames.Clear();
             ReturnParamNames.Clear();
+            OutParamNames.Clear();
             OriginalParamsName = string.Empty;
             ExistYield = false;
             ExistTopLevelReturn = false;
+
+            ExistTryCatch = false;
+            TryCatchLayer = 0;
+            ReturnVarName = string.Empty;
 
             SemanticInfo = sym;
 
@@ -68,6 +78,7 @@ namespace RoslynTool.CsToDsl
                     //ref参数与out参数在形参处理时机制相同，实参时out参数传入__cs2dsl_out（适应脚本引擎与dotnet反射的调用规则）
                     ParamNames.Add(string.Format("out({0})", param.Name));
                     ReturnParamNames.Add(param.Name);
+                    OutParamNames.Add(param.Name);
                 } else {
                     if (param.Type.TypeKind == TypeKind.Struct) {
                         string ns = ClassInfo.GetNamespaces(param.Type);

@@ -573,7 +573,7 @@ namespace RoslynTool.CsToDsl
             while (null != parent && parent.IsKind(SyntaxKind.Block)) {
                 parent = parent.Parent;
             }
-            ret = ret && (parent.IsKind(SyntaxKind.MethodDeclaration) || parent.IsKind(SyntaxKind.ConstructorDeclaration));
+            ret = ret && (parent.IsKind(SyntaxKind.MethodDeclaration) || parent.IsKind(SyntaxKind.ConstructorDeclaration) || parent.IsKind(SyntaxKind.ParenthesizedLambdaExpression) || parent.IsKind(SyntaxKind.AnonymousMethodExpression) || null != parent.Parent && parent.Parent.IsKind(SyntaxKind.AccessorList));
             return ret;
         }
         private bool IsLastNodeOfFor(SyntaxNode node)

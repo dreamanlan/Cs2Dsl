@@ -50,6 +50,7 @@ namespace RoslynTool.CsToDsl
 
         internal StringBuilder InstanceInitializerCodeBuilder = new StringBuilder();
         internal StringBuilder StaticInitializerCodeBuilder = new StringBuilder();
+        internal StringBuilder EnumValue2StringCodeBuilder = new StringBuilder();
 
         internal Dictionary<string, ClassInfo> InnerClasses = new Dictionary<string, ClassInfo>();
         internal Dictionary<string, List<string>> InnerInterfaces = new Dictionary<string, List<string>>();
