@@ -775,7 +775,7 @@ namespace RoslynTool.CsToDsl
                 }
             }
         }
-        private static bool IsSubclassOf(ITypeSymbol symInfo, string name)
+        internal static bool IsSubclassOf(ITypeSymbol symInfo, string name)
         {
             bool ret = false;
             INamedTypeSymbol baseType = symInfo.BaseType;
@@ -789,7 +789,7 @@ namespace RoslynTool.CsToDsl
             }
             return ret;
         }
-        private static bool IsImplementationOfSys(ITypeSymbol symInfo, string name)
+        internal static bool IsImplementationOfSys(ITypeSymbol symInfo, string name)
         {
             if (null != symInfo) {
                 foreach (var intf in symInfo.AllInterfaces) {
@@ -803,7 +803,7 @@ namespace RoslynTool.CsToDsl
             }
             return false;
         }
-        private static bool IsImplementationOf(ITypeSymbol symInfo, string name)
+        internal static bool IsImplementationOf(ITypeSymbol symInfo, string name)
         {
             if (null != symInfo) {
                 foreach (var intf in symInfo.AllInterfaces) {
@@ -814,6 +814,7 @@ namespace RoslynTool.CsToDsl
             }
             return false;
         }
+
         private static string GetArraySubscriptString(int index)
         {
             StringBuilder sb = new StringBuilder();
@@ -855,6 +856,8 @@ namespace RoslynTool.CsToDsl
                     return "\\\"";
                 case '\'':
                     return "\\'";
+                case '\0':
+                    return "\\0";
                 default:
                     return c.ToString();
             }

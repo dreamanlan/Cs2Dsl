@@ -663,7 +663,7 @@ namespace RoslynTool.CsToDsl
                                         }
                                     }
                                     OutputExpressionSyntax(exp.Expressions[0], opd1);
-                                    CodeBuilder.Append(" -> ");
+                                    CodeBuilder.Append(" => ");
                                     OutputExpressionSyntax(exp.Expressions[1], opd2);
                                 } else {
                                     Log(args[i], "Dictionary init error !");

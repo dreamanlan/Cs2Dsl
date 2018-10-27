@@ -361,11 +361,11 @@ namespace RoslynTool.CsToDsl
                 CodeBuilder.AppendFormat("{0}{1} = {{", GetIndentString(), SymbolTable.GetPropertyName(declSym));
                 CodeBuilder.AppendLine();
                 ++m_Indent;
-                CodeBuilder.AppendFormat("{0}get = {1}.get_{2},", GetIndentString(), declSym.IsStatic ? "static_methods" : "instance_methods", declSym.Name);
+                CodeBuilder.AppendFormat("{0}get = {1}.get_{2};", GetIndentString(), declSym.IsStatic ? "static_methods" : "instance_methods", declSym.Name);
                 CodeBuilder.AppendLine();
                 --m_Indent;
                 CodeBuilder.AppendFormat("{0}", GetIndentString());
-                CodeBuilder.AppendLine("},");
+                CodeBuilder.AppendLine("};");
                 return;
             }
 
@@ -526,7 +526,7 @@ namespace RoslynTool.CsToDsl
                             }
                         }
                         --m_Indent;
-                        CodeBuilder.AppendFormat("{0}}}{1},", GetIndentString(), mi.ExistYield ? ")" : string.Empty);
+                        CodeBuilder.AppendFormat("{0}}}{1};", GetIndentString(), mi.ExistYield ? ")" : string.Empty);
                         CodeBuilder.AppendLine();
 
                         m_MethodInfoStack.Pop();
@@ -542,13 +542,13 @@ namespace RoslynTool.CsToDsl
                     if (null != sym) {
                         string manglingName = NameMangling(sym);
                         string keyword = accessor.Keyword.Text;
-                        CodeBuilder.AppendFormat("{0}{1} = {2}.{3},", GetIndentString(), keyword, declSym.IsStatic ? "static_methods" : "instance_methods", manglingName);
+                        CodeBuilder.AppendFormat("{0}{1} = {2}.{3};", GetIndentString(), keyword, declSym.IsStatic ? "static_methods" : "instance_methods", manglingName);
                         CodeBuilder.AppendLine();
                     }
                 }
                 --m_Indent;
                 CodeBuilder.AppendFormat("{0}", GetIndentString());
-                CodeBuilder.AppendLine("},");
+                CodeBuilder.AppendLine("};");
             }
         }
         public override void VisitEventDeclaration(EventDeclarationSyntax node)
@@ -619,7 +619,7 @@ namespace RoslynTool.CsToDsl
                         VisitBlock(accessor.Body);
                     }
                     --m_Indent;
-                    CodeBuilder.AppendFormat("{0}}},", GetIndentString());
+                    CodeBuilder.AppendFormat("{0}}};", GetIndentString());
                     CodeBuilder.AppendLine();
 
                     m_MethodInfoStack.Pop();
@@ -641,7 +641,7 @@ namespace RoslynTool.CsToDsl
             }
             --m_Indent;
             CodeBuilder.AppendFormat("{0}", GetIndentString());
-            CodeBuilder.AppendLine("},");
+            CodeBuilder.AppendLine("};");
         }
         public override void VisitOperatorDeclaration(OperatorDeclarationSyntax node)
         {
@@ -733,7 +733,7 @@ namespace RoslynTool.CsToDsl
                     }
                     CodeBuilder.AppendLine(";");
                     --m_Indent;
-                    CodeBuilder.AppendFormat("{0}}},", GetIndentString());
+                    CodeBuilder.AppendFormat("{0}}};", GetIndentString());
                     CodeBuilder.AppendLine();
 
                     m_MethodInfoStack.Pop();
@@ -884,7 +884,7 @@ namespace RoslynTool.CsToDsl
                         }
                     }
                     --m_Indent;
-                    CodeBuilder.AppendFormat("{0}}}{1},", GetIndentString(), mi.ExistYield ? ")" : string.Empty);
+                    CodeBuilder.AppendFormat("{0}}}{1};", GetIndentString(), mi.ExistYield ? ")" : string.Empty);
                     CodeBuilder.AppendLine();
 
                     m_MethodInfoStack.Pop();

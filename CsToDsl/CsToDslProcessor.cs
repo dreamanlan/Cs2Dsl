@@ -468,7 +468,7 @@ namespace RoslynTool.CsToDsl
                 dslFile.Load(file, s => Log(file, s));
                 string fileDir = Path.GetDirectoryName(file);
                 string fileName = Path.GetFileNameWithoutExtension(file);
-                dslFile.Save(Path.Combine(fileDir, fileName + "_copy.txt"));
+                dslFile.Save(Path.Combine(fileDir, fileName + "_copy.dsl"));
             }
             if (haveSemanticError || haveTranslationError) {
                 if (haveSemanticError) {
@@ -844,7 +844,7 @@ namespace RoslynTool.CsToDsl
             sb.AppendLine("require(\"cs2dsl__utility\");");
             sb.AppendLine("require(\"cs2dsl__attributes\");");
             sb.AppendLine("require(\"cs2dsl__externenums\");");
-            sb.AppendLine("require(\"cs2lua__interfaces\");");
+            sb.AppendLine("require(\"cs2dsl__interfaces\");");
             foreach (string lib in dsllibRefs) {
                 sb.AppendFormat("require(\"{0}\");", lib.ToLower());
                 sb.AppendLine();
@@ -938,7 +938,7 @@ namespace RoslynTool.CsToDsl
                     sb.AppendLine("require(\"cs2dsl__attributes\");");
                 sb.AppendLine("require(\"cs2dsl__namespaces\");");
                 sb.AppendLine("require(\"cs2dsl__externenums\");");
-                sb.AppendLine("require(\"cs2lua__interfaces\");");
+                sb.AppendLine("require(\"cs2dsl__interfaces\");");
                 foreach (string lib in requiredlibs) {
                     sb.AppendFormat("require(\"{0}\");", lib.ToLower());
                     sb.AppendLine();
