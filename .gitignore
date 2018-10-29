@@ -53,3 +53,4 @@ obj
 *.opensdf
 Cs2DslUtility/obj
 Generator/JsGenerator/obj
+Generator/LuaGenerator/obj

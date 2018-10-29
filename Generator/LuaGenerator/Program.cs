@@ -23,7 +23,10 @@ namespace LuaGenerator
             if (args.Length > 0) {
                 path = args[0];
             }
-            var files = Directory.GetFiles(path, "*.dsl", SearchOption.TopDirectoryOnly);
+            s_ExePath = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
+            s_OutPath = path;
+            File.Copy(Path.Combine(s_ExePath, "lualib/utility.lua"), Path.Combine(s_OutPath, "cs2lua__utility.txt"), true);
+            var files = Directory.GetFiles(s_OutPath, "*.dsl", SearchOption.TopDirectoryOnly);
             foreach (string file in files) {
                 try {
                     Dsl.DslFile dslFile = new Dsl.DslFile();
@@ -44,12 +47,53 @@ namespace LuaGenerator
                 var funcData = dslInfo.First;
                 var callData = funcData.Call;
                 if (id == "require") {
-                    sb.AppendFormatLine("{0}require \"{1}\";", GetIndentString(indent), callData.GetParamId(0).Replace("cs2dsl__", "cs2lua__"));
+                    string requireFileName = callData.GetParamId(0).Replace("cs2dsl__", "cs2lua__");
+                    string srcPath = Path.Combine(s_ExePath, string.Format("lualib/{0}.lua", requireFileName));
+                    string destPath = Path.Combine(s_OutPath, string.Format("{0}.txt", requireFileName));
+                    if (!File.Exists(destPath) && File.Exists(srcPath)) {
+                        File.Copy(srcPath, destPath, true);
+                    }
+                    sb.AppendFormatLine("{0}require \"{1}\";", GetIndentString(indent), requireFileName);
                 } else if (id == "enum") {
-
-                } else if (id == "class" || id == "struct") {
-                    string className = callData.GetParamId(0);
+                    string className = CalcTypeString(callData.GetParam(0));
                     var baseClass = callData.GetParam(1);
+                    string baseClassName = string.Empty;
+                    if (null != baseClass) {
+                        baseClassName = CalcTypeString(baseClass);
+                    }
+
+                    sb.AppendLine();
+
+                    sb.AppendFormatLine("{0}{1} = {{", GetIndentString(indent), className);
+                    ++indent;
+                    foreach (var comp in funcData.Statements) {
+                        var cd = comp as Dsl.CallData;
+                        if (null != cd) {
+                            sb.AppendFormatLine("{0}[\"{1}\"] = {2},", GetIndentString(indent), cd.GetParamId(0), cd.GetParamId(1));
+                        }
+                    }
+                    --indent;
+                    sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+
+                    sb.AppendLine();
+
+                    sb.AppendFormatLine("{0}rawset({1}, \"Value2String\", {{", GetIndentString(indent), className);
+                    ++indent;
+                    foreach (var comp in funcData.Statements) {
+                        var cd = comp as Dsl.CallData;
+                        if (null != cd) {
+                            sb.AppendFormatLine("{0}[{1}] = \"{2}\",", GetIndentString(indent), cd.GetParamId(1), cd.GetParamId(0));
+                        }
+                    }
+                    --indent;
+                    sb.AppendFormatLine("{0}}});", GetIndentString(indent));
+                } else if (id == "class" || id == "struct") {
+                    string className = CalcTypeString(callData.GetParam(0));
+                    var baseClass = callData.GetParam(1);
+                    string baseClassName = string.Empty;
+                    if (null != baseClass) {
+                        baseClassName = CalcTypeString(baseClass);
+                    }
                     bool isValueType = id == "struct";
 
                     sb.AppendLine();
@@ -383,7 +427,7 @@ namespace LuaGenerator
 
                     sb.AppendLine();
 
-                    sb.AppendFormatLine("{0}return defineclass({1}, \"{2}\", static, static_methods, static_fields_build, static_props, static_events, instance_methods, instance_fields_build, instance_props, instance_events, interfaces, interface_map, {3});", GetIndentString(indent), null == baseClass ? "nil" : baseClass.GetId(), className, isValueType ? "true" : "false");
+                    sb.AppendFormatLine("{0}return defineclass({1}, \"{2}\", static, static_methods, static_fields_build, static_props, static_events, instance_methods, instance_fields_build, instance_props, instance_events, interfaces, interface_map, {3});", GetIndentString(indent), null == baseClass ? "nil" : baseClassName, className, isValueType ? "true" : "false");
 
                     --indent;
                     sb.AppendFormatLine("{0}end,", GetIndentString(indent));
@@ -483,22 +527,31 @@ namespace LuaGenerator
                 } else if (paramNum == 2) {
                     var param1 = data.GetParam(0);
                     var param2 = data.GetParam(1);
+                    bool handled = false;
                     if (id == "=" && param1.GetId() == "multiassign") {
-                        string varName = string.Format("__compiler_multiassign_{0}", data.GetLine());
-                        sb.AppendFormat("var {0}", varName);
-                        sb.AppendFormat(" {0} ", id);
-                        GenerateSyntaxComponent(param2, sb, indent, false);
-                        sb.Append(";");
                         var cd = param1 as Dsl.CallData;
-                        int varNum = cd.GetParamNum();
-                        for (int i = 0; i < varNum; ++i) {
-                            string var = cd.GetParamId(i);
-                            sb.AppendFormat("{0} = {1}[{2}]", var, varName, i);
-                            if (i < varNum - 1) {
+                        if (null != cd) {
+                            if (cd.GetParamNum() > 1) {
+                                int varNum = cd.GetParamNum();
+                                for (int i = 0; i < varNum; ++i) {
+                                    var parami = cd.GetParam(i);
+                                    GenerateSyntaxComponent(parami, sb, indent, false);
+                                    if (i < varNum - 1) {
+                                        sb.Append(",");
+                                    }
+                                }
+                                sb.AppendFormat(" {0} ", id);
+                                GenerateSyntaxComponent(param2, sb, indent, false);
                                 sb.Append(";");
+                            } else {
+                                GenerateSyntaxComponent(cd.GetParam(0), sb, indent, false);
+                                sb.AppendFormat(" {0} ", id);
+                                GenerateSyntaxComponent(param2, sb, indent, false);
                             }
+                            handled = true;
                         }
-                    } else {
+                    }
+                    if (!handled) {
                         if (id != "=")
                             sb.Append("(");
                         GenerateSyntaxComponent(param1, sb, indent, false);
@@ -520,30 +573,91 @@ namespace LuaGenerator
                 }
             } else if (id == "return") {
                 sb.Append("return ");
-                if (data.GetParamNum() > 1)
-                    sb.Append("[");
                 string prestr = string.Empty;
                 foreach (var param in data.Params) {
                     sb.Append(prestr);
                     GenerateSyntaxComponent(param, sb, indent, false);
                     prestr = ", ";
                 }
-                if (data.GetParamNum() > 1)
-                    sb.Append("]");
             } else if (id == "execunary") {
                 string op = data.GetParamId(0);
-                op = ConvertOperator(op);
-                sb.AppendFormat("({0} ", op);
-                GenerateSyntaxComponent(data.GetParam(1), sb, indent, false);
-                sb.Append(")");
+                var p1 = data.GetParam(1);
+                string type1 = CalcTypeString(data.GetParam(2));
+                bool type1IsValue = data.GetParamId(3) == "struct";
+                bool type1IsCs2lua = data.GetParamId(4) == "true";
+                string intOp = op;
+                if (op == "++")
+                    intOp = "+";
+                else if (op == "--")
+                    intOp = "-";
+                int intOpIndex;
+                if (type1.StartsWith("System.Int") && TryGetSpecialIntegerOperatorIndex(intOp, out intOpIndex)) {
+                    sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, intOp);
+                    GenerateSyntaxComponent(p1, sb, indent, false);
+                    sb.AppendFormat(", 1, {0}, {1})", type1, type1);
+                } else {
+                    string functor;
+                    if (s_UnaryFunctor.TryGetValue(op, out functor)) {
+                        sb.AppendFormat("{0}(", functor);
+                        GenerateSyntaxComponent(data.GetParam(1), sb, indent, false);
+                        sb.Append(")");
+                    } else {
+                        op = ConvertOperator(op);
+                        sb.AppendFormat("({0} ", op);
+                        GenerateSyntaxComponent(data.GetParam(1), sb, indent, false);
+                        sb.Append(")");
+                    }
+                }
             } else if (id == "execbinary") {
                 string op = data.GetParamId(0);
-                op = ConvertOperator(op);
-                sb.Append("(");
-                GenerateSyntaxComponent(data.GetParam(1), sb, indent, false);
-                sb.AppendFormat(" {0} ", op);
-                GenerateSyntaxComponent(data.GetParam(2), sb, indent, false);
-                sb.Append(")");
+                var p1 = data.GetParam(1);
+                var p2 = data.GetParam(2);
+                string type1 = CalcTypeString(data.GetParam(3));
+                string type2 = CalcTypeString(data.GetParam(4));
+                bool type1IsValue = data.GetParamId(5) == "struct";
+                bool type2IsValue = data.GetParamId(6) == "struct";
+                bool type1IsCs2lua = data.GetParamId(7) == "true";
+                bool type2IsCs2lua = data.GetParamId(8) == "true";
+                int intOpIndex;
+                if (type1.StartsWith("System.Int") && type2.StartsWith("System.Int") && TryGetSpecialIntegerOperatorIndex(op, out intOpIndex)) {
+                    sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, op);
+                    GenerateSyntaxComponent(p1, sb, indent, false);
+                    sb.Append(", ");
+                    GenerateSyntaxComponent(p2, sb, indent, false);
+                    sb.AppendFormat(", {0}, {1})", type1, type2);
+                } else if (op == "+" && (type1 == "System.String" || type2 == "System.String")) {
+                    bool tostr1 = type1 != "System.String";
+                    bool tostr2 = type2 != "System.String";
+                    sb.Append("System.String.Concat(");
+                    if (tostr1)
+                        sb.Append("tostring(");
+                    GenerateSyntaxComponent(p1, sb, indent, false);
+                    if (tostr1)
+                        sb.Append(")");
+                    sb.Append(", ");
+                    if (tostr2)
+                        sb.Append("tostring(");
+                    GenerateSyntaxComponent(p2, sb, indent, false);
+                    if (tostr2)
+                        sb.Append(")");
+                    sb.Append(")");
+                } else {
+                    string functor;
+                    if (s_BinaryFunctor.TryGetValue(op, out functor)) {
+                        sb.AppendFormat("{0}(", functor);
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.Append(", ");
+                        GenerateSyntaxComponent(p2, sb, indent, false);
+                        sb.Append(")");
+                    } else {
+                        op = ConvertOperator(op);
+                        sb.Append("(");
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.AppendFormat(" {0} ", op);
+                        GenerateSyntaxComponent(p2, sb, indent, false);
+                        sb.Append(")");
+                    }
+                }
             } else if (id == "getstatic") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
@@ -623,7 +737,7 @@ namespace LuaGenerator
                 }
                 sb.Append("}");
             } else if (id == "listinit" || id == "collectioninit" || id == "arrayinit") {
-                sb.Append("[");
+                sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
                     var param = data.Params[ix];
@@ -631,7 +745,7 @@ namespace LuaGenerator
                     GenerateSyntaxComponent(param, sb, indent, false);
                     prestr = ", ";
                 }
-                sb.Append("]");
+                sb.Append("}");
             } else if (id == "foreach") {
                 sb.Append("for ");
                 var param1 = data.GetParamId(0);
@@ -647,8 +761,6 @@ namespace LuaGenerator
                     sb.Append("if ");
                 } else if (id == "elseif") {
                     sb.Append("elseif ");
-                } else if (id == "else") {
-                    sb.Append("else ");
                 } else if (id == "while") {
                     sb.Append("while ");
                 } else if (id == "until") {
@@ -754,24 +866,76 @@ namespace LuaGenerator
             if (firstLineUseIndent) {
                 sb.AppendFormat("{0}", GetIndentString(indent));
             }
-            foreach (var funcData in data.Functions) {
-                var fcall = funcData.Call;
-                GenerateConcreteSyntax(fcall, sb, indent, funcData == data.First ? false : true);
-                if (funcData.HaveStatement()) {
-                    sb.AppendLine();
-                    ++indent;
-                    foreach (var comp in funcData.Statements) {
-                        GenerateSyntaxComponent(comp, sb, indent, true);
-                        sb.AppendLine(";");
+            string id = data.GetId();
+            if (id == "do") {
+                foreach (var funcData in data.Functions) {
+                    var fcall = funcData.Call;
+                    if (funcData == data.First) {
+                        if (firstLineUseIndent) {
+                            sb.AppendLine("repeat");
+                        } else {
+                            sb.AppendFormatLine("{0}repeat", GetIndentString(indent));
+                        }
+                    } else if (funcData == data.Second) {
+                        var param0 = fcall.GetParam(0);
+                        if (param0.GetId() == "false") {
+                            sb.AppendFormat("{0}until true", GetIndentString(indent));
+                        } else {
+                            sb.AppendFormat("{0}until not (", GetIndentString(indent));
+                            GenerateSyntaxComponent(param0, sb, indent, true);
+                            sb.Append(")");
+                        }
                     }
-                    --indent;
-                    if (funcData == data.Last) {
-                        sb.AppendFormat("{0}end", GetIndentString(indent));
+                    if (funcData.HaveStatement()) {
+                        sb.AppendLine();
+                        ++indent;
+                        foreach (var comp in funcData.Statements) {
+                            GenerateSyntaxComponent(comp, sb, indent, true);
+                            sb.AppendLine(";");
+                        }
+                        --indent;
+                        if (funcData == data.Last) {
+                            sb.AppendFormat("{0}end", GetIndentString(indent));
+                        }
+                    } else {
+                        sb.Append(" ");
                     }
-                } else {
-                    sb.Append(" ");
+                }
+            } else {
+                foreach (var funcData in data.Functions) {
+                    var fcall = funcData.Call;
+                    GenerateConcreteSyntax(fcall, sb, indent, funcData == data.First ? false : true);
+                    if (funcData.HaveStatement()) {
+                        sb.AppendLine();
+                        ++indent;
+                        foreach (var comp in funcData.Statements) {
+                            GenerateSyntaxComponent(comp, sb, indent, true);
+                            sb.AppendLine(";");
+                        }
+                        --indent;
+                        if (funcData == data.Last) {
+                            sb.AppendFormat("{0}end", GetIndentString(indent));
+                        }
+                    } else {
+                        sb.Append(" ");
+                    }
                 }
             }
+        }
+        private static string CalcTypeString(Dsl.ISyntaxComponent comp)
+        {
+            string ret = comp.GetId();
+            var cd = comp as Dsl.CallData;
+            if (null != cd && cd.GetParamClass() == (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PERIOD) {
+                string prefix;
+                if (cd.IsHighOrder) {
+                    prefix = CalcTypeString(cd.Call);
+                } else {
+                    prefix = cd.GetId();
+                }
+                ret = prefix + "." + cd.GetParamId(0);
+            }
+            return ret;
         }
         private static Dsl.ISyntaxComponent FindParam(Dsl.FunctionData funcData, string key)
         {
@@ -813,5 +977,26 @@ namespace LuaGenerator
             const string c_IndentString = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
             return c_IndentString.Substring(0, indent);
         }
+        private static bool TryGetSpecialIntegerOperatorIndex(string op, out int index)
+        {
+            index = s_SpecialIntegerOperators.IndexOf(op);
+            return index >= 0;
+        }
+
+        private static string s_ExePath = string.Empty;
+        private static string s_OutPath = string.Empty;
+        //下面这个list的顺序要与utility.lua里的整数操作表__cs2lua_special_integer_operators一致（索引用作操作符识别常量）
+        private static List<string> s_SpecialIntegerOperators = new List<string> { "/", "%", "+", "-", "*", "<<", ">>", "&", "|", "^", "~" };
+        
+        private static Dictionary<string, string> s_UnaryFunctor = new Dictionary<string, string> {
+            {"~", "bitnot"},
+        };
+        private static Dictionary<string, string> s_BinaryFunctor = new Dictionary<string, string> {
+            {"<<", "lshift"},
+            {">>", "rshift"},
+            {"&", "bitand"},
+            {"|", "bitor"},
+            {"^", "bitxor"},
+        };
     }
 }

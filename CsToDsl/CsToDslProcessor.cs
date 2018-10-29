@@ -429,7 +429,6 @@ namespace RoslynTool.CsToDsl
                 }
                 sw.Close();
             }
-            HashSet<string> dsllibRefs = new HashSet<string>();
             StringBuilder nsBuilder = new StringBuilder();
             BuildNamespaces(nsBuilder, toplevelMni);
             StringBuilder attrBuilder = new StringBuilder();
@@ -447,29 +446,11 @@ namespace RoslynTool.CsToDsl
             File.WriteAllText(Path.Combine(outputDir, "cs2dsl__references.txt"), refExternBuilder.ToString());
             foreach (var pair in toplevelClasses) {
                 StringBuilder classBuilder = new StringBuilder();
-                dsllibRefs.Clear();
-                string fileName = BuildDslClass(classBuilder, pair.Key, pair.Value, dsllibRefs);
-                foreach (string lib in dsllibRefs) {
-                    string libFile = Path.Combine(exepath, "dsllib/" + lib.ToLower() + ".dsl");
-                    if (File.Exists(libFile)) {
-                        File.Copy(libFile, Path.Combine(outputDir, string.Format("{0}.{1}", lib.ToLower(), c_OutputExt)), true);
-                    } else {
-                        Console.WriteLine("Can't find file '{0}' in dsllib, you should copy it to output dir !", libFile);
-                    }
-                }
+                string fileName = BuildDslClass(classBuilder, pair.Key, pair.Value);
                 File.WriteAllText(Path.Combine(outputDir, Path.ChangeExtension(fileName.ToLower(), c_OutputExt)), classBuilder.ToString());
             }
             StringBuilder allClassBuilder = new StringBuilder();
-            dsllibRefs.Clear();
-            BuildDslClass(allClassBuilder, toplevelMni, toplevelClasses, dsllibRefs);
-            var outFiles = Directory.GetFiles(outputDir, "*." + c_OutputExt);
-            foreach (var file in outFiles) {
-                Dsl.DslFile dslFile = new Dsl.DslFile();
-                dslFile.Load(file, s => Log(file, s));
-                string fileDir = Path.GetDirectoryName(file);
-                string fileName = Path.GetFileNameWithoutExtension(file);
-                dslFile.Save(Path.Combine(fileDir, fileName + "_copy.dsl"));
-            }
+            BuildDslClass(allClassBuilder, toplevelMni, toplevelClasses);
             if (haveSemanticError || haveTranslationError) {
                 if (haveSemanticError) {
                     Console.WriteLine("{0}", File.ReadAllText(Path.Combine(logDir, "SemanticError.log")));
@@ -832,9 +813,10 @@ namespace RoslynTool.CsToDsl
                 sb.AppendLine(key);
             }
         }
-        private static void BuildDslClass(StringBuilder sb, MergedNamespaceInfo toplevelMni, Dictionary<string, MergedClassInfo> toplevelMcis, HashSet<string> dsllibRefs)
+        private static void BuildDslClass(StringBuilder sb, MergedNamespaceInfo toplevelMni, Dictionary<string, MergedClassInfo> toplevelMcis)
         {
             StringBuilder code = new StringBuilder();
+            HashSet<string> dsllibRefs = new HashSet<string>();
             BuildNamespaces(code, toplevelMni);
             foreach (var pair in toplevelMcis) {
                 StringBuilder classBuilder = new StringBuilder();
@@ -851,8 +833,9 @@ namespace RoslynTool.CsToDsl
             }
             sb.Append(code.ToString());
         }
-        private static string BuildDslClass(StringBuilder sb, string key, MergedClassInfo mci, HashSet<string> dsllibRefs)
+        private static string BuildDslClass(StringBuilder sb, string key, MergedClassInfo mci)
         {
+            HashSet<string> dsllibRefs = new HashSet<string>();
             return BuildDslClass(sb, key, mci, true, dsllibRefs);
         }
         private static string BuildDslClass(StringBuilder sb, string key, MergedClassInfo mci, bool isAlone, HashSet<string> dsllibRefs)
@@ -1042,7 +1025,7 @@ namespace RoslynTool.CsToDsl
                     sb.AppendFormat("{0}{1}.__cctor_called = true;", GetIndentString(indent), key);
                     sb.AppendLine();
                     --indent;
-                    sb.AppendFormat("{0}}}", GetIndentString(indent));
+                    sb.AppendFormat("{0}}};", GetIndentString(indent));
                     sb.AppendLine();
                     //static initializer
                     foreach (var ci in classes) {
@@ -1172,7 +1155,7 @@ namespace RoslynTool.CsToDsl
                         sb.AppendFormat("{0}this.__ctor_called = true;", GetIndentString(indent));
                         sb.AppendLine();
                         --indent;
-                        sb.AppendFormat("{0}}}", GetIndentString(indent));
+                        sb.AppendFormat("{0}}};", GetIndentString(indent));
                         sb.AppendLine();
                         //instance initializer
                         foreach (var ci in classes) {

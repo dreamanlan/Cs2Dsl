@@ -238,22 +238,34 @@ namespace JsGenerator
                 } else if (paramNum == 2) {
                     var param1 = data.GetParam(0);
                     var param2 = data.GetParam(1);
+                    bool handled = false;
                     if (id == "=" && param1.GetId() == "multiassign") {
-                        string varName = string.Format("__compiler_multiassign_{0}", data.GetLine());
-                        sb.AppendFormat("var {0}", varName);
-                        sb.AppendFormat(" {0} ", id);
-                        GenerateSyntaxComponent(param2, sb, indent, false, paramsStart);
-                        sb.Append(";");
                         var cd = param1 as Dsl.CallData;
-                        int varNum = cd.GetParamNum();
-                        for (int i = 0; i < varNum; ++i) {
-                            string var = cd.GetParamId(i);
-                            sb.AppendFormat("{0} = {1}[{2}]", var, varName, i);
-                            if (i < varNum - 1) {
+                        if (null != cd) {
+                            if (cd.GetParamNum() > 1) {
+                                string varName = string.Format("__compiler_multiassign_{0}", data.GetLine());
+                                sb.AppendFormat("var {0}", varName);
+                                sb.AppendFormat(" {0} ", id);
+                                GenerateSyntaxComponent(param2, sb, indent, false, paramsStart);
                                 sb.Append(";");
+                                int varNum = cd.GetParamNum();
+                                for (int i = 0; i < varNum; ++i) {
+                                    var parami = cd.GetParam(i);
+                                    GenerateSyntaxComponent(parami, sb, indent, false, paramsStart);
+                                    sb.AppendFormat(" = {0}[{1}]", varName, i);
+                                    if (i < varNum - 1) {
+                                        sb.Append(";");
+                                    }
+                                }
+                            } else {
+                                GenerateSyntaxComponent(cd.GetParam(0), sb, indent, false, paramsStart);
+                                sb.AppendFormat(" {0} ", id);
+                                GenerateSyntaxComponent(param2, sb, indent, false, paramsStart);
                             }
+                            handled = true;
                         }
-                    } else {
+                    }
+                    if (!handled) {
                         if (id != "=")
                             sb.Append("(");
                         GenerateSyntaxComponent(param1, sb, indent, false, paramsStart);
