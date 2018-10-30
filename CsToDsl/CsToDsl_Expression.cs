@@ -953,7 +953,7 @@ namespace RoslynTool.CsToDsl
         }
         public override void VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node)
         {
-            CodeBuilder.Append("wrapobject{");
+            CodeBuilder.Append("anonymousobject{");
             int ct = node.Initializers.Count;
             for (int i = 0; i < ct; ++i) {
                 var init = node.Initializers[i];
@@ -1014,7 +1014,7 @@ namespace RoslynTool.CsToDsl
                     }
                     CodeBuilder.Append(" return(arr); })()");
                 } else {
-                    CodeBuilder.Append("wraparray()");
+                    CodeBuilder.Append("initarray()");
                 }
             } else {
                 VisitInitializerExpression(node.Initializer);

@@ -25,10 +25,16 @@ namespace JsGenerator
             }
             var files = Directory.GetFiles(path, "*.dsl", SearchOption.TopDirectoryOnly);
             foreach (string file in files) {
-                Dsl.DslFile dslFile = new Dsl.DslFile();
-                dslFile.Load(file, s => Log(file, s));
-                GenerateJs(dslFile, Path.ChangeExtension(file, "js"));
+                try {
+                    Dsl.DslFile dslFile = new Dsl.DslFile();
+                    dslFile.Load(file, s => Log(file, s));
+                    GenerateJs(dslFile, Path.ChangeExtension(file, "js"));
+                } catch (Exception ex) {
+                    Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
+                    System.Environment.Exit(-1);
+                }
             }
+            System.Environment.Exit(0);
         }
         private static void GenerateJs(Dsl.DslFile dslFile, string outputFile)
         {
@@ -91,7 +97,12 @@ namespace JsGenerator
                                     ++indent;
                                     foreach (var comp in fdef.Statements) {
                                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
-                                        sb.AppendLine(";");
+                                        string subId = comp.GetId();
+                                        if (subId != "comments" && subId != "comment") {
+                                            sb.AppendLine(";");
+                                        } else {
+                                            sb.AppendLine();
+                                        }
                                     }
                                     --indent;
                                     sb.AppendFormatLine("{0}}}", GetIndentString(indent));
@@ -154,7 +165,12 @@ namespace JsGenerator
                                     ++indent;
                                     foreach (var comp in fdef.Statements) {
                                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
-                                        sb.AppendLine(";");
+                                        string subId = comp.GetId();
+                                        if (subId != "comments" && subId != "comment") {
+                                            sb.AppendLine(";");
+                                        } else {
+                                            sb.AppendLine();
+                                        }
                                     }
                                     --indent;
                                     sb.AppendFormatLine("{0}}}", GetIndentString(indent));
@@ -214,7 +230,7 @@ namespace JsGenerator
                     sb.Append(id);
                     break;
                 case (int)Dsl.ValueData.STRING_TOKEN:
-                    sb.AppendFormat("\"{0}\"", id);
+                    sb.AppendFormat("\"{0}\"", Escape(id));
                     break;
             }
         }
@@ -275,6 +291,8 @@ namespace JsGenerator
                             sb.Append(")");
                     }
                 }
+            } else if (id == "comment") {
+                sb.AppendFormat("//{0}", data.GetParamId(0));
             } else if (id == "local") {
                 sb.Append("var ");
                 string prestr = string.Empty;
@@ -374,8 +392,8 @@ namespace JsGenerator
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
                     var param = data.Params[ix] as Dsl.CallData;
                     sb.Append(prestr);
-                    var k = param.IsHighOrder ? param.Call as Dsl.ISyntaxComponent : param.Name as Dsl.ISyntaxComponent;
-                    var v = param.GetParam(0);
+                    var k = param.GetParam(0);
+                    var v = param.GetParam(1);
                     GenerateSyntaxComponent(k, sb, indent, false, paramsStart);
                     sb.Append(" : ");
                     GenerateSyntaxComponent(v, sb, indent, false, paramsStart);
@@ -450,7 +468,12 @@ namespace JsGenerator
             if (null == callData) {
                 id = fcall.GetId();
             }
-            if (id == "local") {
+            if (id == "comments") {
+                foreach (var comp in data.Statements) {
+                    GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
+                    sb.AppendLine();
+                }
+            } else if (id == "local") {
                 bool first = true;
                 foreach (var comp in data.Statements) {
                     if (!first) {
@@ -468,7 +491,12 @@ namespace JsGenerator
                     ++indent;
                     foreach (var comp in data.Statements) {
                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
-                        sb.AppendLine(";");
+                        string subId = comp.GetId();
+                        if (subId != "comments" && subId != "comment") {
+                            sb.AppendLine(";");
+                        } else {
+                            sb.AppendLine();
+                        }
                     }
                     --indent;
                     sb.AppendFormat("{0}}}", GetIndentString(indent));
@@ -488,7 +516,12 @@ namespace JsGenerator
                     ++indent;
                     foreach (var comp in funcData.Statements) {
                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
-                        sb.AppendLine(";");
+                        string subId = comp.GetId();
+                        if (subId != "comments" && subId != "comment") {
+                            sb.AppendLine(";");
+                        } else {
+                            sb.AppendLine();
+                        }
                     }
                     --indent;
                     sb.AppendFormat("{0}}}", GetIndentString(indent));
@@ -523,6 +556,45 @@ namespace JsGenerator
         {
             const string c_IndentString = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
             return c_IndentString.Substring(0, indent);
+        }
+        private static string Escape(string src)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < src.Length; ++i) {
+                char c = src[i];
+                string es = Escape(c);
+                sb.Append(es);
+            }
+            return sb.ToString();
+        }
+        private static string Escape(char c)
+        {
+            switch (c) {
+                case '\a':
+                    return "\\a";
+                case '\b':
+                    return "\\b";
+                case '\f':
+                    return "\\f";
+                case '\n':
+                    return "\\n";
+                case '\r':
+                    return "\\r";
+                case '\t':
+                    return "\\t";
+                case '\v':
+                    return "\\v";
+                case '\\':
+                    return "\\\\";
+                case '\"':
+                    return "\\\"";
+                case '\'':
+                    return "\\'";
+                case '\0':
+                    return "\\0";
+                default:
+                    return c.ToString();
+            }
         }
     }
 }

@@ -598,7 +598,8 @@ namespace RoslynTool.CsToDsl
             foreach (var sym in typesym.GetMembers()) {
                 var msym = sym as IMethodSymbol;
                 if (null != msym && msym.GetAttributes().Length > 0 && !ClassInfo.HasAttribute(sym, "Cs2Dsl.IgnoreAttribute")) {
-                    temp.AppendFormat("{0}method({1}){{", GetIndentString(indent), SymbolTable.CalcMethodMangling(msym));
+                    string mname = SymbolTable.Instance.NameMangling(msym);
+                    temp.AppendFormat("{0}method({1}){{", GetIndentString(indent), mname);
                     temp.AppendLine();
                     ++indent;
                     BuildAttributes(temp, indent, msym.GetAttributes());
@@ -644,7 +645,7 @@ namespace RoslynTool.CsToDsl
             }
             --indent;
             if (csb.Length > 0) {
-                sb.AppendFormat("attributes({0}){{", ClassInfo.GetFullName(typesym).Replace(".", "__"));
+                sb.AppendFormat("attributes({0}){{", ClassInfo.GetFullName(typesym));
                 sb.AppendLine();
                 sb.Append(csb.ToString());
                 sb.Append("};");
@@ -796,7 +797,7 @@ namespace RoslynTool.CsToDsl
             foreach (var pair in intfs) {
                 var name = pair.Key;
                 var list = pair.Value;
-                sb.AppendFormat("interface({0}) {{ interfaces {{", name, name);
+                sb.AppendFormat("interface({0}) {{ interfaces {{", name);
                 string prestr = string.Empty;
                 foreach (var iname in list) {
                     sb.Append(prestr);
@@ -998,11 +999,11 @@ namespace RoslynTool.CsToDsl
                     sb.AppendLine();
                     ++indent;
                     if (!string.IsNullOrEmpty(baseClass) && myselfDefinedBaseClass) {
-                        sb.AppendFormat("{0}{1}.cctor();", GetIndentString(indent), baseClass);
+                        sb.AppendFormat("{0}callstatic({1}, \"cctor\");", GetIndentString(indent), baseClass);
                         sb.AppendLine();
                     }
                     if (generateBasicCctor) {
-                        sb.AppendFormat("{0}{1}.__cctor();", GetIndentString(indent), key);
+                        sb.AppendFormat("{0}callstatic({1}, \"__cctor\");", GetIndentString(indent), key);
                         sb.AppendLine();
                     }
                     --indent;
@@ -1128,11 +1129,11 @@ namespace RoslynTool.CsToDsl
                         sb.AppendLine();
                         ++indent;
                         if (!string.IsNullOrEmpty(baseClass) && myselfDefinedBaseClass) {
-                            sb.AppendFormat("{0}this.base.ctor(this);", GetIndentString(indent));
+                            sb.AppendFormat("{0}callstatic(this.base, \"ctor\", this);", GetIndentString(indent));
                             sb.AppendLine();
                         }
                         if (generateBasicCtor) {
-                            sb.AppendFormat("{0}this.__ctor();", GetIndentString(indent));
+                            sb.AppendFormat("{0}callinstance(this, \"__ctor\");", GetIndentString(indent));
                             sb.AppendLine();
                         }
                         --indent;

@@ -192,11 +192,11 @@ namespace RoslynTool.CsToDsl
             }
             if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                 if (mi.ParamsIsValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = valuetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                 } else if (mi.ParamsIsExternValueType) {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = externvaluetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                 } else {
-                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                    CodeBuilder.AppendFormat("{0}local{{{1} = params()}};", GetIndentString(), mi.OriginalParamsName);
                 }
                 CodeBuilder.AppendLine();
             }
@@ -206,12 +206,12 @@ namespace RoslynTool.CsToDsl
                 var oper = m_Model.GetOperation(init) as IInvocationExpression;
                 string manglingName2 = NameMangling(oper.TargetMethod);
                 if (init.ThisOrBaseKeyword.Text == "this") {
-                    CodeBuilder.AppendFormat("{0}this.{1}(", GetIndentString(), manglingName2);
+                    CodeBuilder.AppendFormat("{0}callinstance(this, \"{1}\"", GetIndentString(), manglingName2);
                 } else if (init.ThisOrBaseKeyword.Text == "base") {
-                    CodeBuilder.AppendFormat("{0}this.base.{1}(this", GetIndentString(), manglingName2);
-                    if (init.ArgumentList.Arguments.Count > 0) {
-                        CodeBuilder.Append(", ");
-                    }
+                    CodeBuilder.AppendFormat("{0}callstatic(this.base, \"{1}\", this", GetIndentString(), manglingName2);
+                }
+                if (init.ArgumentList.Arguments.Count > 0) {
+                    CodeBuilder.Append(", ");
                 }
                 VisitArgumentList(init.ArgumentList);
                 CodeBuilder.AppendLine(");");
@@ -219,21 +219,21 @@ namespace RoslynTool.CsToDsl
             //再执行构造函数内容（字段初始化部分）
             if (isStatic) {
                 if (!string.IsNullOrEmpty(ci.BaseKey) && myselfDefinedBaseClass) {
-                    CodeBuilder.AppendFormat("{0}{1}.cctor();", GetIndentString(), ci.BaseKey);
+                    CodeBuilder.AppendFormat("{0}callstatic({1}, \"cctor\");", GetIndentString(), ci.BaseKey);
                     CodeBuilder.AppendLine();
                 }
                 if (generateBasicCctor) {
-                    CodeBuilder.AppendFormat("{0}{1}.__cctor();", GetIndentString(), ci.Key);
+                    CodeBuilder.AppendFormat("{0}callstatic({1}, \"__cctor\");", GetIndentString(), ci.Key);
                     CodeBuilder.AppendLine();
                 }
             } else {
                 if (!string.IsNullOrEmpty(ci.BaseKey) && !ClassInfo.IsBaseInitializerCalled(node, m_Model) && myselfDefinedBaseClass) {
                     //如果当前构造没有调父类构造并且委托的其它构造也没有调父类构造，则调用默认构造。
-                    CodeBuilder.AppendFormat("{0}this.base.ctor(this);", GetIndentString());
+                    CodeBuilder.AppendFormat("{0}callstatic(this.base, \"ctor\", this);", GetIndentString());
                     CodeBuilder.AppendLine();
                 }
                 if (generateBasicCtor) {
-                    CodeBuilder.AppendFormat("{0}this.__ctor({1});", GetIndentString(), string.Join(", ", mi.GenericTypeTypeParamNames.ToArray()));
+                    CodeBuilder.AppendFormat("{0}callinstance(this, \"__ctor\", {1});", GetIndentString(), string.Join(", ", mi.GenericTypeTypeParamNames.ToArray()));
                     CodeBuilder.AppendLine();
                 }
             }
@@ -400,7 +400,7 @@ namespace RoslynTool.CsToDsl
                     OutputExpressionSyntax(node.Initializer.Value, opd);
                     CodeBuilder.AppendFormat("{0};", declSym.Type.TypeKind == TypeKind.Delegate ? ")" : string.Empty);
                 } else if (declSym.Type.TypeKind == TypeKind.Delegate) {
-                    CodeBuilder.Append("wrapdelegation{};");
+                    CodeBuilder.Append("delegation();");
                 } else {
                     OutputDefaultValue(declSym.Type);
                     CodeBuilder.Append(";");
@@ -703,11 +703,11 @@ namespace RoslynTool.CsToDsl
                     }
                     if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                         if (mi.ParamsIsValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = valuetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                         } else if (mi.ParamsIsExternValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = externvaluetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                         } else {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = params()}};", GetIndentString(), mi.OriginalParamsName);
                         }
                         CodeBuilder.AppendLine();
                     }
@@ -801,17 +801,17 @@ namespace RoslynTool.CsToDsl
                         if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                             if (keyword == "get") {
                                 if (mi.ParamsIsValueType) {
-                                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                                    CodeBuilder.AppendFormat("{0}local{{{1} = valuetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                                 } else if (mi.ParamsIsExternValueType) {
-                                    CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                                    CodeBuilder.AppendFormat("{0}local{{{1} = externvaluetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                                 } else {
-                                    CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                                    CodeBuilder.AppendFormat("{0}local{{{1} = params()}};", GetIndentString(), mi.OriginalParamsName);
                                 }
                                 CodeBuilder.AppendLine();
                             } else {
-                                CodeBuilder.AppendFormat("{0}local{{{1} = wrapparams(...)}};", GetIndentString(), mi.OriginalParamsName);
+                                CodeBuilder.AppendFormat("{0}local{{{1} = plainparams()}};", GetIndentString(), mi.OriginalParamsName);
                                 CodeBuilder.AppendLine();
-                                CodeBuilder.AppendFormat("{0}local{{value = paramsremove({1})}};", GetIndentString(), mi.OriginalParamsName);
+                                CodeBuilder.AppendFormat("{0}local{{value = plainparamsremove({1})}};", GetIndentString(), mi.OriginalParamsName);
                                 CodeBuilder.AppendLine();
                                 if (mi.ParamsIsValueType) {
                                     CodeBuilder.AppendFormat("{0}{1} = wrapvaluetypearray({2});", GetIndentString(), mi.OriginalParamsName, mi.OriginalParamsName);
@@ -964,11 +964,11 @@ namespace RoslynTool.CsToDsl
                     }
                     if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                         if (mi.ParamsIsValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = valuetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                         } else if (mi.ParamsIsExternValueType) {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = externvaluetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                         } else {
-                            CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                            CodeBuilder.AppendFormat("{0}local{{{1} = params()}};", GetIndentString(), mi.OriginalParamsName);
                         }
                         CodeBuilder.AppendLine();
                     }
@@ -1124,11 +1124,11 @@ namespace RoslynTool.CsToDsl
             }
             if (null != node.Declaration && null != node.Declaration.Variables) {
                 foreach (var decl in node.Declaration.Variables) {
-                    CodeBuilder.AppendFormat("{0}{1}.Dispose();", GetIndentString(), decl.Identifier.Text);
+                    CodeBuilder.AppendFormat("{0}callinstance({1}, \"Dispose\");", GetIndentString(), decl.Identifier.Text);
                     CodeBuilder.AppendLine();
                 }
             } else if (null != node.Expression) {
-                CodeBuilder.AppendFormat("{0}{1}.Dispose();", GetIndentString(), varName);
+                CodeBuilder.AppendFormat("{0}callinstance({1}, \"Dispose\");", GetIndentString(), varName);
                 CodeBuilder.AppendLine();
             } else {
                 Log(node, "node.Declaration is null or node.Declaration.Variables is null, and node.Expression is null.");

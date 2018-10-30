@@ -265,11 +265,11 @@ namespace RoslynTool.CsToDsl
                 }
                 if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
                     if (mi.ParamsIsValueType) {
-                        CodeBuilder.AppendFormat("{0}local{{{1} = wrapvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                        CodeBuilder.AppendFormat("{0}local{{{1} = valuetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                     } else if (mi.ParamsIsExternValueType) {
-                        CodeBuilder.AppendFormat("{0}local{{{1} = wrapexternvaluetypearray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                        CodeBuilder.AppendFormat("{0}local{{{1} = externvaluetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
                     } else {
-                        CodeBuilder.AppendFormat("{0}local{{{1} = wraparray(...)}};", GetIndentString(), mi.OriginalParamsName);
+                        CodeBuilder.AppendFormat("{0}local{{{1} = params()}};", GetIndentString(), mi.OriginalParamsName);
                     }
                     CodeBuilder.AppendLine();
                 }
@@ -472,7 +472,7 @@ namespace RoslynTool.CsToDsl
                         }
                     } else if (type.TypeKind == TypeKind.Delegate) {
                         CodeBuilder.AppendFormat("{0}{1}", GetIndentString(), name);
-                        CodeBuilder.Append(" = wrapdelegation{}");
+                        CodeBuilder.Append(" = delegation()");
                     } else if (type.IsValueType) {
                         if (SymbolTable.IsBasicType(type)) {
                             CodeBuilder.AppendFormat("{0}{1} = ", GetIndentString(), name);
@@ -545,7 +545,7 @@ namespace RoslynTool.CsToDsl
                         }
                         CodeBuilder.Append(")");
                     } else {
-                        CodeBuilder.AppendFormat("{0}{1} = wrapdelegation{{}}", GetIndentString(), name);
+                        CodeBuilder.AppendFormat("{0}{1} = delegation()", GetIndentString(), name);
                     }
                     CodeBuilder.Append(";");
                     CodeBuilder.AppendLine();

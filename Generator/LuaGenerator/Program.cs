@@ -34,14 +34,18 @@ namespace LuaGenerator
                     GenerateLua(dslFile, Path.ChangeExtension(file.Replace("cs2dsl__", "cs2lua__"), "txt"));
                 } catch (Exception ex) {
                     Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
+                    System.Environment.Exit(-1);
                 }
             }
+            System.Environment.Exit(0);
         }
         private static void GenerateLua(Dsl.DslFile dslFile, string outputFile)
         {
             StringBuilder sb = new StringBuilder();
+            Stack<string> classDefineStack = new Stack<string>();
             string prestr = string.Empty;
             int indent = 0;
+            bool firstAttrs = true;
             foreach (var dslInfo in dslFile.DslInfos) {
                 string id = dslInfo.GetId();
                 var funcData = dslInfo.First;
@@ -54,6 +58,58 @@ namespace LuaGenerator
                         File.Copy(srcPath, destPath, true);
                     }
                     sb.AppendFormatLine("{0}require \"{1}\";", GetIndentString(indent), requireFileName);
+                } else if (id == "attributes") {
+                    if (firstAttrs) {
+                        sb.AppendLine("__cs2lua__AllAttrs = {};");
+                        firstAttrs = false;
+                    }
+                    string className = CalcTypeString(callData.GetParam(0));
+                    sb.AppendFormatLine("{0}__cs2lua__AllAttrs[\"{1}\"] = {{", GetIndentString(indent), className);
+                    ++indent;
+                    var classAttr = FindStatement(funcData, "class") as Dsl.FunctionData;
+                    if (null != classAttr) {
+                        sb.AppendFormatLine("{0}Class = {{", GetIndentString(indent));
+                        ++indent;
+                        foreach (var comp in classAttr.Statements) {
+                            GenerateAttribute(comp, sb, indent);
+                        }
+                        --indent;
+                        sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                    }
+                    foreach (var mattr in funcData.Statements) {
+                        if (mattr.GetId() == "class")
+                            continue;
+                        var fd = mattr as Dsl.FunctionData;
+                        if (null != fd) {
+                            var mid = fd.Call.GetParamId(0);
+                            sb.AppendFormatLine("{0}{1} = {{", GetIndentString(indent), mid);
+                            ++indent;
+                            foreach (var comp in fd.Statements) {
+                                GenerateAttribute(comp, sb, indent);
+                            }
+                            --indent;
+                            sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                        }
+                    }
+                    --indent;
+                    sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                } else if (id == "namespace") {
+                    string ns = CalcTypeString(callData.GetParam(0));
+                    sb.AppendFormatLine("{0}{1} = {1} or {{}};", GetIndentString(indent), ns, ns);
+                } else if (id == "interface") {
+                    string intfName = CalcTypeString(callData.GetParam(0));
+                    sb.AppendFormat("{0}{1} = {{__cs2lua_defined = true, __type_name = \"{2}\", __interfaces = {{", GetIndentString(indent), intfName, intfName);
+                    var intfs = FindStatement(funcData, "interfaces") as Dsl.FunctionData;
+                    if (null != intfs) {
+                        foreach (var comp in intfs.Statements) {
+                            sb.AppendFormat("{0}\"{1}\"", prestr, comp.GetId());
+                            prestr = ", ";
+                        }
+                    }
+                    sb.AppendLine("}, __exist = function(k) return false; end};");
+                } else if (id == "defineentry") {
+                    string className = CalcTypeString(callData.GetParam(0));
+                    sb.AppendFormatLine("{0}defineentry({1});", GetIndentString(indent), className);
                 } else if (id == "enum") {
                     string className = CalcTypeString(callData.GetParam(0));
                     var baseClass = callData.GetParam(1);
@@ -130,7 +186,12 @@ namespace LuaGenerator
                                     ++indent;
                                     foreach (var comp in fdef.Statements) {
                                         GenerateSyntaxComponent(comp, sb, indent, true);
-                                        sb.AppendLine(";");
+                                        string subId = comp.GetId();
+                                        if (subId != "comments" && subId != "comment") {
+                                            sb.AppendLine(";");
+                                        } else {
+                                            sb.AppendLine();
+                                        }
                                     }
                                     --indent;
                                     sb.AppendFormatLine("{0}end,", GetIndentString(indent));
@@ -173,7 +234,12 @@ namespace LuaGenerator
                                     ++indent;
                                     foreach (var comp in fdef.Statements) {
                                         GenerateSyntaxComponent(comp, sb, indent, true);
-                                        sb.AppendLine(";");
+                                        string subId = comp.GetId();
+                                        if (subId != "comments" && subId != "comment") {
+                                            sb.AppendLine(";");
+                                        } else {
+                                            sb.AppendLine();
+                                        }
                                     }
                                     --indent;
                                     sb.AppendFormatLine("{0}end,", GetIndentString(indent));
@@ -300,7 +366,12 @@ namespace LuaGenerator
                                     ++indent;
                                     foreach (var comp in fdef.Statements) {
                                         GenerateSyntaxComponent(comp, sb, indent, true);
-                                        sb.AppendLine(";");
+                                        string subId = comp.GetId();
+                                        if (subId != "comments" && subId != "comment") {
+                                            sb.AppendLine(";");
+                                        } else {
+                                            sb.AppendLine();
+                                        }
                                     }
                                     --indent;
                                     sb.AppendFormatLine("{0}end,", GetIndentString(indent));
@@ -433,9 +504,13 @@ namespace LuaGenerator
                     sb.AppendFormatLine("{0}end,", GetIndentString(indent));
                     --indent;
                     sb.AppendFormatLine("{0}}};", GetIndentString(indent));
-                    sb.AppendLine();
-                    sb.AppendFormatLine("{0}{1}.__define_class();", GetIndentString(indent), className);
+                    classDefineStack.Push(className);
                 }
+            }
+            sb.AppendLine();
+            while (classDefineStack.Count > 0) {
+                var className = classDefineStack.Pop();
+                sb.AppendFormatLine("{0}{1}.__define_class();", GetIndentString(indent), className);
             }
             File.WriteAllText(outputFile, sb.ToString());
         }
@@ -502,7 +577,7 @@ namespace LuaGenerator
                     sb.Append(id);
                     break;
                 case (int)Dsl.ValueData.STRING_TOKEN:
-                    sb.AppendFormat("\"{0}\"", id);
+                    sb.AppendFormat("\"{0}\"", Escape(id));
                     break;
             }
         }
@@ -542,7 +617,6 @@ namespace LuaGenerator
                                 }
                                 sb.AppendFormat(" {0} ", id);
                                 GenerateSyntaxComponent(param2, sb, indent, false);
-                                sb.Append(";");
                             } else {
                                 GenerateSyntaxComponent(cd.GetParam(0), sb, indent, false);
                                 sb.AppendFormat(" {0} ", id);
@@ -583,7 +657,8 @@ namespace LuaGenerator
                 string op = data.GetParamId(0);
                 var p1 = data.GetParam(1);
                 string type1 = CalcTypeString(data.GetParam(2));
-                bool type1IsValue = data.GetParamId(3) == "struct";
+                string typeKind1 = data.GetParamId(3);
+                bool type1IsValue = typeKind1 == "struct";
                 bool type1IsCs2lua = data.GetParamId(4) == "true";
                 string intOp = op;
                 if (op == "++")
@@ -591,7 +666,7 @@ namespace LuaGenerator
                 else if (op == "--")
                     intOp = "-";
                 int intOpIndex;
-                if (type1.StartsWith("System.Int") && TryGetSpecialIntegerOperatorIndex(intOp, out intOpIndex)) {
+                if (IsIntegerType(type1, typeKind1) && TryGetSpecialIntegerOperatorIndex(intOp, out intOpIndex)) {
                     sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, intOp);
                     GenerateSyntaxComponent(p1, sb, indent, false);
                     sb.AppendFormat(", 1, {0}, {1})", type1, type1);
@@ -614,12 +689,14 @@ namespace LuaGenerator
                 var p2 = data.GetParam(2);
                 string type1 = CalcTypeString(data.GetParam(3));
                 string type2 = CalcTypeString(data.GetParam(4));
-                bool type1IsValue = data.GetParamId(5) == "struct";
-                bool type2IsValue = data.GetParamId(6) == "struct";
+                string typeKind1 = data.GetParamId(5);
+                string typeKind2 = data.GetParamId(6);
+                bool type1IsValue = typeKind1 == "struct";
+                bool type2IsValue = typeKind2 == "struct";
                 bool type1IsCs2lua = data.GetParamId(7) == "true";
                 bool type2IsCs2lua = data.GetParamId(8) == "true";
                 int intOpIndex;
-                if (type1.StartsWith("System.Int") && type2.StartsWith("System.Int") && TryGetSpecialIntegerOperatorIndex(op, out intOpIndex)) {
+                if (IsIntegerType(type1, typeKind1) && IsIntegerType(type2, typeKind2) && TryGetSpecialIntegerOperatorIndex(op, out intOpIndex)) {
                     sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, op);
                     GenerateSyntaxComponent(p1, sb, indent, false);
                     sb.Append(", ");
@@ -657,6 +734,62 @@ namespace LuaGenerator
                         GenerateSyntaxComponent(p2, sb, indent, false);
                         sb.Append(")");
                     }
+                }
+            } else if (id == "invokeexternoperator") {
+                string method = data.GetParamId(1);
+                string luaOp = string.Empty;
+                //slua导出时把重载操作符导出成lua实例方法了，然后利用lua实例上支持的操作符元方法在运行时绑定到重载实现
+                //这里把lua支持的操作符方法转成lua操作（可能比invokeexternoperator要快一些）
+                if (method == "op_Addition") {
+                    luaOp = "+";
+                } else if (method == "op_Subtraction") {
+                    luaOp = "-";
+                } else if (method == "op_Multiply") {
+                    luaOp = "*";
+                } else if (method == "op_Division") {
+                    luaOp = "/";
+                } else if (method == "op_UnaryNegation") {
+                    luaOp = "-";
+                } else if (method == "op_UnaryPlus") {
+                    luaOp = "+";
+                } else if (method == "op_LessThan") {
+                    luaOp = "<";
+                } else if (method == "op_GreaterThan") {
+                    luaOp = ">";
+                } else if (method == "op_LessThanOrEqual") {
+                    luaOp = "<=";
+                } else if (method == "op_GreaterThanOrEqual") {
+                    luaOp = ">= ";
+                }
+                if (string.IsNullOrEmpty(luaOp)) {
+                    sb.Append(id);
+                    sb.Append("(");
+                    string prestr = string.Empty;
+                    for (int ix = 0; ix < data.Params.Count; ++ix) {
+                        var param = data.Params[ix];
+                        sb.Append(prestr);
+                        string paramId = param.GetId();
+                        if (paramId == "...") {
+                            sb.Append("...");
+                            continue;
+                        }
+                        GenerateSyntaxComponent(param, sb, indent, false);
+                        prestr = ", ";
+                    }
+                    sb.Append(")");
+                } else if (data.GetParamNum() == 3 && luaOp == "-") {
+                    sb.Append("(- ");
+                    var param0 = data.GetParam(2);
+                    GenerateSyntaxComponent(param0, sb, indent, false);
+                    sb.Append(")");
+                } else if (data.GetParamNum() == 4) {
+                    sb.Append("(");
+                    var param0 = data.GetParam(2);
+                    var param1 = data.GetParam(3);
+                    GenerateSyntaxComponent(param0, sb, indent, false);
+                    sb.AppendFormat(" {0} ", luaOp);
+                    GenerateSyntaxComponent(param1, sb, indent, false);
+                    sb.Append(")");
                 }
             } else if (id == "getstatic") {
                 var obj = data.Params[0];
@@ -722,21 +855,45 @@ namespace LuaGenerator
                     prestr = ", ";
                 }
                 sb.Append(")");
+            } else if (id == "typeof") {
+                var typeStr = CalcTypeString(data.GetParam(0));
+                sb.AppendFormat("{0}", typeStr);
+            } else if (id == "plainparams") {
+                sb.Append("{...}");
+            } else if (id == "plainparamsremove") {
+                sb.AppendFormat("table.remove({0})", data.GetParamId(0));
+            } else if (id == "params") {
+                sb.Append("wraparray{...}");
+            } else if (id == "valuetypeparams") {
+                sb.Append("wrapvaluetypearray{...}");
+            } else if (id == "externvaluetypeparams") {
+                sb.Append("wrapexternvaluetypearray{...}");
+            } else if (id == "delegation") {
+                sb.Append("wrapdelegation{}");
+            } else if (id == "anonymousobject") {
+                sb.Append("wrapdictionary{");
+                string prestr = string.Empty;
+                for (int ix = 0; ix < data.Params.Count; ++ix) {
+                    var param = data.Params[ix];
+                    sb.Append(prestr);
+                    GenerateSyntaxComponent(param, sb, indent, false);
+                    prestr = ", ";
+                }
+                sb.Append("}");
             } else if (id == "dictionaryinit") {
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
                     var param = data.Params[ix] as Dsl.CallData;
                     sb.Append(prestr);
-                    var k = param.IsHighOrder ? param.Call as Dsl.ISyntaxComponent : param.Name as Dsl.ISyntaxComponent;
-                    var v = param.GetParam(0);
-                    GenerateSyntaxComponent(k, sb, indent, false);
-                    sb.Append(" : ");
+                    var k = param.GetParamId(0);
+                    var v = param.GetParam(1);                    
+                    sb.AppendFormat("[\"{0}\"] = ", Escape(k));
                     GenerateSyntaxComponent(v, sb, indent, false);
                     prestr = ", ";
                 }
                 sb.Append("}");
-            } else if (id == "listinit" || id == "collectioninit" || id == "arrayinit") {
+            } else if (id == "listinit" || id == "collectioninit" || id == "complexinit" || id == "objectinit") {
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -746,6 +903,23 @@ namespace LuaGenerator
                     prestr = ", ";
                 }
                 sb.Append("}");
+            } else if (id == "arrayinit") {
+                sb.Append("wraparray({");
+                string prestr = string.Empty;
+                for (int ix = 0; ix < data.Params.Count; ++ix) {
+                    var param = data.Params[ix];
+                    sb.Append(prestr);
+                    GenerateSyntaxComponent(param, sb, indent, false);
+                    prestr = ", ";
+                }
+                sb.Append("})");
+            } else if (id == "initarray") {
+                if (data.GetParamNum() > 0) {
+                    var vname = data.GetParamId(0);
+                    sb.AppendFormat("wraparray({{}}, {0})", vname);
+                } else {
+                    sb.Append("wraparray{}");
+                }
             } else if (id == "foreach") {
                 sb.Append("for ");
                 var param1 = data.GetParamId(0);
@@ -753,6 +927,22 @@ namespace LuaGenerator
                 sb.Append(" in ");
                 var param2 = data.GetParam(1);
                 GenerateSyntaxComponent(param2, sb, indent, false);
+                sb.Append(" do");
+            } else if (id == "for") {
+                sb.Append("for ");
+                var param0 = data.GetParamId(0);
+                sb.Append(param0);
+                sb.Append(" = ");
+                var param1 = data.GetParam(1);
+                GenerateSyntaxComponent(param1, sb, indent, false);
+                sb.Append(", ");
+                var param2 = data.GetParam(2);
+                GenerateSyntaxComponent(param2, sb, indent, false);
+                if (data.GetParamNum() > 3) {
+                    sb.Append(", ");
+                    var param3 = data.GetParam(3);
+                    GenerateSyntaxComponent(param3, sb, indent, false);
+                }
                 sb.Append(" do");
             } else {
                 if (null != callData) {
@@ -765,13 +955,19 @@ namespace LuaGenerator
                     sb.Append("while ");
                 } else if (id == "until") {
                     sb.Append("until ");
-                } else if (id == "for") {
-                    sb.Append("for ");
+                } else if (id == "block") {
+                    sb.Append("do");
+                } else if (id == "dsltry") {
+                    sb.Append("luatry");
+                } else if (id == "dslcatch") {
+                    sb.Append("luacatch");
+                } else if (id == "dslthrow") {
+                    sb.Append("luathrow");
                 } else {
                     sb.Append(id);
                 }
                 if (data.HaveParam()) {
-                    if (id == "if" || id == "elseif" || id == "while" || id == "until" || id == "for") {
+                    if (id == "if" || id == "elseif" || id == "while" || id == "until") {
                     } else {
                         switch (data.GetParamClass()) {
                             case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PARENTHESIS:
@@ -799,7 +995,7 @@ namespace LuaGenerator
                             prestr = ", ";
                         }
                     }
-                    if (id == "if" || id == "elseif" || id == "while" || id == "until" || id == "for") {
+                    if (id == "if" || id == "elseif" || id == "while" || id == "until") {
                     } else {
                         switch (data.GetParamClass()) {
                             case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PARENTHESIS:
@@ -814,7 +1010,7 @@ namespace LuaGenerator
                     }
                     if (id == "if" || id == "elseif") {
                         sb.Append(" then ");
-                    } else if (id == "while" || id == "for") {
+                    } else if (id == "while") {
                         sb.Append(" do");
                     }
                 }
@@ -854,7 +1050,12 @@ namespace LuaGenerator
                     ++indent;
                     foreach (var comp in data.Statements) {
                         GenerateSyntaxComponent(comp, sb, indent, true);
-                        sb.AppendLine(";");
+                        string subId = comp.GetId();
+                        if (subId != "comments" && subId != "comment") {
+                            sb.AppendLine(";");
+                        } else {
+                            sb.AppendLine();
+                        }
                     }
                     --indent;
                     sb.AppendFormat("{0}end", GetIndentString(indent));
@@ -891,7 +1092,12 @@ namespace LuaGenerator
                         ++indent;
                         foreach (var comp in funcData.Statements) {
                             GenerateSyntaxComponent(comp, sb, indent, true);
-                            sb.AppendLine(";");
+                            string subId = comp.GetId();
+                            if (subId != "comments" && subId != "comment") {
+                                sb.AppendLine(";");
+                            } else {
+                                sb.AppendLine();
+                            }
                         }
                         --indent;
                         if (funcData == data.Last) {
@@ -910,7 +1116,12 @@ namespace LuaGenerator
                         ++indent;
                         foreach (var comp in funcData.Statements) {
                             GenerateSyntaxComponent(comp, sb, indent, true);
-                            sb.AppendLine(";");
+                            string subId = comp.GetId();
+                            if (subId != "comments" && subId != "comment") {
+                                sb.AppendLine(";");
+                            } else {
+                                sb.AppendLine();
+                            }
                         }
                         --indent;
                         if (funcData == data.Last) {
@@ -920,6 +1131,41 @@ namespace LuaGenerator
                         sb.Append(" ");
                     }
                 }
+            }
+        }
+        private static void GenerateAttribute(Dsl.ISyntaxComponent comp, StringBuilder sb, int indent)
+        {
+            string prestr = string.Empty;
+            var cd = comp as Dsl.CallData;
+            if (null != cd) {
+                var attrCd = cd.GetParam(0) as Dsl.CallData;
+                string attr;
+                if (attrCd.IsHighOrder) {
+                    attr = CalcTypeString(attrCd.Call);
+                } else {
+                    attr = attrCd.GetId();
+                }
+                sb.AppendFormat("{0}{{\"{1}\", {{", GetIndentString(indent), attr);
+                var posAttrs = attrCd.GetParam(0) as Dsl.CallData;
+                foreach (var p in posAttrs.Params) {
+                    var pcd = p as Dsl.CallData;
+                    var k = pcd.GetId();
+                    var v = pcd.GetParamId(0);
+                    sb.Append(prestr);
+                    sb.AppendFormat("{0} = \"{1}\"", k, v);
+                    prestr = ", ";
+                }
+                sb.Append("}, {");
+                var nameAttrs = attrCd.GetParam(1) as Dsl.CallData;
+                foreach (var p in nameAttrs.Params) {
+                    var pcd = p as Dsl.CallData;
+                    var k = pcd.GetId();
+                    var v = pcd.GetParamId(0);
+                    sb.Append(prestr);
+                    sb.AppendFormat("{0} = \"{1}\"", k, v);
+                    prestr = ", ";
+                }
+                sb.AppendLine("}};");
             }
         }
         private static string CalcTypeString(Dsl.ISyntaxComponent comp)
@@ -977,10 +1223,63 @@ namespace LuaGenerator
             const string c_IndentString = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
             return c_IndentString.Substring(0, indent);
         }
+        private static string Escape(string src)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < src.Length; ++i) {
+                char c = src[i];
+                string es = Escape(c);
+                sb.Append(es);
+            }
+            return sb.ToString();
+        }
+        private static string Escape(char c)
+        {
+            switch (c) {
+                case '\a':
+                    return "\\a";
+                case '\b':
+                    return "\\b";
+                case '\f':
+                    return "\\f";
+                case '\n':
+                    return "\\n";
+                case '\r':
+                    return "\\r";
+                case '\t':
+                    return "\\t";
+                case '\v':
+                    return "\\v";
+                case '\\':
+                    return "\\\\";
+                case '\"':
+                    return "\\\"";
+                case '\'':
+                    return "\\'";
+                case '\0':
+                    return "\\0";
+                default:
+                    return c.ToString();
+            }
+        }
         private static bool TryGetSpecialIntegerOperatorIndex(string op, out int index)
         {
             index = s_SpecialIntegerOperators.IndexOf(op);
             return index >= 0;
+        }
+        private static bool IsBasicType(string t, string typeKind, bool includeString)
+        {
+            if (typeKind == "Enum")
+                return true;
+            if (includeString && t == "System.String")
+                return true;
+            return s_BasicTypes.Contains(t);
+        }
+        private static bool IsIntegerType(string t, string typeKind)
+        {
+            if (typeKind == "Enum")
+                return true;
+            return s_IntegerTypes.Contains(t);
         }
 
         private static string s_ExePath = string.Empty;
@@ -997,6 +1296,12 @@ namespace LuaGenerator
             {"&", "bitand"},
             {"|", "bitor"},
             {"^", "bitxor"},
+        };
+        private static HashSet<string> s_BasicTypes = new HashSet<string> {
+            "System.Boolean", "System.Byte", "System.SByte", "System.Int16", "System.UInt16", "System.Int32", "System.UInt32", "System.Int64", "System.UInt64", "System.Single", "System.Double"
+        };
+        private static HashSet<string> s_IntegerTypes = new HashSet<string> {
+            "System.Byte", "System.SByte", "System.Int16", "System.UInt16", "System.Int32", "System.UInt32", "System.Int64", "System.UInt64"
         };
     }
 }

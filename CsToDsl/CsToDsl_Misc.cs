@@ -53,7 +53,7 @@ namespace RoslynTool.CsToDsl
                     content = content.Substring(2);
                     if (content != m_LastComment) {
                         m_LastComment = content;
-                        CodeBuilder.AppendFormat("{0}comment(\"{1}\");", GetIndentString(), content.Replace('"', '\''));
+                        CodeBuilder.AppendFormat("{0}comment(\"{1}\");", GetIndentString(), Escape(content));
                         CodeBuilder.AppendLine();
                     }
                 } else if (trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)) {
@@ -65,7 +65,7 @@ namespace RoslynTool.CsToDsl
                         ++m_Indent;
                         var lines = content.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                         foreach (var line in lines) {
-                            CodeBuilder.AppendFormat("{0}comment(\"{1}\");", GetIndentString(), line.Replace('"', '\''));
+                            CodeBuilder.AppendFormat("{0}comment(\"{1}\");", GetIndentString(), Escape(line));
                             CodeBuilder.AppendLine();
                         }
                         --m_Indent;
