@@ -1129,7 +1129,7 @@ namespace RoslynTool.CsToDsl
                         sb.AppendLine();
                         ++indent;
                         if (!string.IsNullOrEmpty(baseClass) && myselfDefinedBaseClass) {
-                            sb.AppendFormat("{0}callstatic(this.base, \"ctor\", this);", GetIndentString(indent));
+                            sb.AppendFormat("{0}callstatic(getinstance(this, \"base\"), \"ctor\", this);", GetIndentString(indent));
                             sb.AppendLine();
                         }
                         if (generateBasicCtor) {
@@ -1144,7 +1144,7 @@ namespace RoslynTool.CsToDsl
                         sb.AppendFormat("{0}__ctor = function(this){{", GetIndentString(indent));
                         sb.AppendLine();
                         ++indent;
-                        sb.AppendFormat("{0}if(this.__ctor_called){{", GetIndentString(indent));
+                        sb.AppendFormat("{0}if(getinstance(this, \"__ctor_called\")){{", GetIndentString(indent));
                         sb.AppendLine();
                         ++indent;
                         sb.AppendFormat("{0}return;", GetIndentString(indent));
@@ -1153,7 +1153,7 @@ namespace RoslynTool.CsToDsl
                         sb.AppendFormat("{0}}}else{{", GetIndentString(indent));
                         sb.AppendLine();
                         ++indent;
-                        sb.AppendFormat("{0}this.__ctor_called = true;", GetIndentString(indent));
+                        sb.AppendFormat("{0}setinstance(this, \"__ctor_called\", true);", GetIndentString(indent));
                         sb.AppendLine();
                         --indent;
                         sb.AppendFormat("{0}}};", GetIndentString(indent));

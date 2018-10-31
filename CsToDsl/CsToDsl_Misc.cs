@@ -218,16 +218,16 @@ namespace RoslynTool.CsToDsl
                             if (null != symInfo) {
                                 var names = symInfo.GetMembers(name);
                                 if (names.Length > 0) {
-                                    CodeBuilder.AppendFormat("newobj.{0}", name);
+                                    CodeBuilder.AppendFormat("getinstance(newobj, \"{0}\")", name);
                                     return;
                                 }
                             }
                         }
                         if (sym.ContainingType == classInfo.SemanticInfo || sym.ContainingType == classInfo.SemanticInfo.OriginalDefinition || classInfo.IsInherit(sym.ContainingType)) {
                             if (sym.IsStatic) {
-                                CodeBuilder.AppendFormat("{0}.{1}", classInfo.Key, sym.Name);
+                                CodeBuilder.AppendFormat("getstatic({0}, \"{1}\")", classInfo.Key, sym.Name);
                             } else {
-                                CodeBuilder.AppendFormat("this.{0}", sym.Name);
+                                CodeBuilder.AppendFormat("getinstance(this, \"{0}\")", sym.Name);
                             }
                             return;
                         }
@@ -238,9 +238,9 @@ namespace RoslynTool.CsToDsl
                         mi.Init(msym, node);
                         if (node.Parent is InvocationExpressionSyntax) {
                             if (sym.IsStatic) {
-                                CodeBuilder.AppendFormat("{0}.{1}", classInfo.Key, manglingName);
+                                CodeBuilder.AppendFormat("getstatic({0}, \"{1}\")", classInfo.Key, manglingName);
                             } else {
-                                CodeBuilder.AppendFormat("this.{0}", manglingName);
+                                CodeBuilder.AppendFormat("getinstance(this, \"{0}\")", manglingName);
                             }
                         } else {
                             string className = ClassInfo.GetFullName(msym.ContainingType);
@@ -252,22 +252,22 @@ namespace RoslynTool.CsToDsl
                             string paramsString = string.Join(", ", mi.ParamNames.ToArray());
                             CodeBuilder.Append(paramsString);
                             if (sym.IsStatic) {
-                                CodeBuilder.AppendFormat("){{ {0}{1}.{2}({3}){4}; }})", msym.ReturnsVoid ? string.Empty : "return(", classInfo.Key, manglingName, paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                                CodeBuilder.AppendFormat("){{ {0}callstatic({1}, \"{2}\", {3}){4}; }})", msym.ReturnsVoid ? string.Empty : "return(", classInfo.Key, manglingName, paramsString, msym.ReturnsVoid ? string.Empty : ")");
                             } else {
-                                CodeBuilder.AppendFormat("){{ {0}this.{1}({2}){3}; }})", msym.ReturnsVoid ? string.Empty : "return(", manglingName, paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                                CodeBuilder.AppendFormat("){{ {0}callinstance(this, \"{1}\", {2}){3}; }})", msym.ReturnsVoid ? string.Empty : "return(", manglingName, paramsString, msym.ReturnsVoid ? string.Empty : ")");
                             }
 
                             CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
                             if (sym.IsStatic) {
                                 CodeBuilder.Append(classInfo.Key);
-                                CodeBuilder.Append(", ");
+                                CodeBuilder.Append(", getstatic(");
                                 CodeBuilder.Append(classInfo.Key);
                             } else {
-                                CodeBuilder.Append("this, this");
+                                CodeBuilder.Append("this, getinstance(this");
                             }
-                            CodeBuilder.Append(".");
+                            CodeBuilder.Append(", \"");
                             CodeBuilder.Append(manglingName);
-                            CodeBuilder.AppendFormat("); return({0}); }})()", varName);
+                            CodeBuilder.AppendFormat("\")); return({0}); }})()", varName);
                         }
                         return;
                     }
@@ -277,7 +277,7 @@ namespace RoslynTool.CsToDsl
                         if (null != symInfo) {
                             var names = symInfo.GetMembers(name);
                             if (names.Length > 0) {
-                                CodeBuilder.AppendFormat("newobj.{0}", name);
+                                CodeBuilder.AppendFormat("getinstance(newobj, \"{0}\")", name);
                                 return;
                             }
                         }

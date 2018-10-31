@@ -30,7 +30,7 @@ namespace RoslynTool.CsToDsl
                 string errVar = string.Format("__compiler_try_err_{0}", GetSourcePosForVar(node));
                 string handledVar = string.Format("__compiler_try_handled_{0}", GetSourcePosForVar(node));
 
-                CodeBuilder.AppendFormat("{0}local({1}, {2}); {2} = dsltry(function(){{", GetIndentString(), retVar, errVar);
+                CodeBuilder.AppendFormat("{0}local({1}, {2}); multiassign({1}, {2}) = dsltry(function(){{", GetIndentString(), retVar, errVar);
                 CodeBuilder.AppendLine();
                 ++m_Indent;
                 ++mi.TryCatchLayer;

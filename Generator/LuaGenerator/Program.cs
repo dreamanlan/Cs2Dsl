@@ -342,12 +342,13 @@ namespace LuaGenerator
                             var mdef = def as Dsl.CallData;
                             if (mdef.GetId() == "=") {
                                 string mname = mdef.GetParamId(0);
-                                var fdef = mdef.GetParam(1) as Dsl.FunctionData;
+                                var param1 = mdef.GetParam(1);
+                                var fdef = param1 as Dsl.FunctionData;
                                 if (null != fdef) {
                                     var fcall = fdef.Call;
-                                    sb.AppendFormat("{0}{1} = {2}(this", GetIndentString(indent), mname, fcall.GetId());
-                                    prestr = ", ";
-                                    for (int ix = 1; ix < fcall.Params.Count;++ix ) {
+                                    sb.AppendFormat("{0}{1} = {2}(", GetIndentString(indent), mname, fcall.GetId());
+                                    prestr = string.Empty;
+                                    for (int ix = 0; ix < fcall.Params.Count;++ix ) {
                                         var param = fcall.Params[ix];
                                         string paramId = param.GetId();
                                         sb.Append(prestr);
@@ -375,6 +376,13 @@ namespace LuaGenerator
                                     }
                                     --indent;
                                     sb.AppendFormatLine("{0}end,", GetIndentString(indent));
+                                } else {
+                                    var cdef = param1 as Dsl.CallData;
+                                    if (null != cdef) {
+                                        sb.AppendFormat("{0}{1} = ", GetIndentString(indent), mname);
+                                        GenerateSyntaxComponent(cdef, sb, indent, false);
+                                        sb.AppendFormatLine(",");
+                                    }
                                 }
                             }
                         }
@@ -658,8 +666,6 @@ namespace LuaGenerator
                 var p1 = data.GetParam(1);
                 string type1 = CalcTypeString(data.GetParam(2));
                 string typeKind1 = data.GetParamId(3);
-                bool type1IsValue = typeKind1 == "struct";
-                bool type1IsCs2lua = data.GetParamId(4) == "true";
                 string intOp = op;
                 if (op == "++")
                     intOp = "+";
@@ -691,10 +697,6 @@ namespace LuaGenerator
                 string type2 = CalcTypeString(data.GetParam(4));
                 string typeKind1 = data.GetParamId(5);
                 string typeKind2 = data.GetParamId(6);
-                bool type1IsValue = typeKind1 == "struct";
-                bool type2IsValue = typeKind2 == "struct";
-                bool type1IsCs2lua = data.GetParamId(7) == "true";
-                bool type2IsCs2lua = data.GetParamId(8) == "true";
                 int intOpIndex;
                 if (IsIntegerType(type1, typeKind1) && IsIntegerType(type2, typeKind2) && TryGetSpecialIntegerOperatorIndex(op, out intOpIndex)) {
                     sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, op);
@@ -718,6 +720,20 @@ namespace LuaGenerator
                     if (tostr2)
                         sb.Append(")");
                     sb.Append(")");
+                } else if ((op == "==" || op == "!=") && !IsBasicType(type1, typeKind1, true) && !IsBasicType(type2, typeKind2, true)) {
+                    if (op == "==") {
+                        sb.Append("isequal(");
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.Append(", ");
+                        GenerateSyntaxComponent(p2, sb, indent, false);
+                        sb.Append(")");
+                    } else {
+                        sb.Append("(not isequal(");
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.Append(", ");
+                        GenerateSyntaxComponent(p2, sb, indent, false);
+                        sb.Append("))");
+                    }
                 } else {
                     string functor;
                     if (s_BinaryFunctor.TryGetValue(op, out functor)) {
@@ -858,16 +874,44 @@ namespace LuaGenerator
             } else if (id == "typeof") {
                 var typeStr = CalcTypeString(data.GetParam(0));
                 sb.AppendFormat("{0}", typeStr);
-            } else if (id == "plainparams") {
-                sb.Append("{...}");
-            } else if (id == "plainparamsremove") {
-                sb.AppendFormat("table.remove({0})", data.GetParamId(0));
             } else if (id == "params") {
-                sb.Append("wraparray{...}");
-            } else if (id == "valuetypeparams") {
-                sb.Append("wrapvaluetypearray{...}");
-            } else if (id == "externvaluetypeparams") {
-                sb.Append("wrapexternvaluetypearray{...}");
+                int num = data.GetParamNum();
+                if (num == 0) {
+                    sb.Append("{...}");
+                } else if (num == 1) {
+                    int type;
+                    if (int.TryParse(data.GetParamId(0), out type)) {
+                        switch (type) {
+                            case 0:
+                                sb.Append("wraparray{...}");
+                                break;
+                            case 1:
+                                sb.Append("wrapvaluetypearray{...}");
+                                break;
+                            case 2:
+                                sb.Append("wrapexternvaluetypearray{...}");
+                                break;
+                        }
+                    }
+                } else {
+                    int type;
+                    if (int.TryParse(data.GetParamId(0), out type)) {
+                        string name = data.GetParamId(1);
+                        switch (type) {
+                            case 0:
+                                sb.AppendFormat("wraparray({0})", name);
+                                break;
+                            case 1:
+                                sb.AppendFormat("wrapvaluetypearray({0})", name);
+                                break;
+                            case 2:
+                                sb.AppendFormat("wrapexternvaluetypearray({0})", name);
+                                break;
+                        }
+                    }
+                }
+            } else if (id == "paramsremove") {
+                sb.AppendFormat("table.remove({0})", data.GetParamId(0));
             } else if (id == "delegation") {
                 sb.Append("wrapdelegation{}");
             } else if (id == "anonymousobject") {
@@ -1226,6 +1270,9 @@ namespace LuaGenerator
         private static string Escape(string src)
         {
             StringBuilder sb = new StringBuilder();
+            //dsl语言只显示处理'\0'、"\xhh"、"\ooo"转义，其它都以实际字符保存在源代码中，以下4个特殊的控制字符无法在源代码中保存，cs2dsl会保存成'\\字符'的形式，之后使用dsl读入时，字符串中将以'\字符'的形式存在
+            //转义时要对此进行特殊处理
+            src = src.Replace("\\a", "\a").Replace("\\b", "\b").Replace("\\f", "\f").Replace("\\v", "\v");
             for (int i = 0; i < src.Length; ++i) {
                 char c = src[i];
                 string es = Escape(c);

@@ -560,6 +560,9 @@ namespace JsGenerator
         private static string Escape(string src)
         {
             StringBuilder sb = new StringBuilder();
+            //dsl语言只显示处理'\0'、"\xhh"、"\ooo"转义，其它都以实际字符保存在源代码中，以下4个特殊的控制字符无法在源代码中保存，cs2dsl会保存成'\\字符'的形式，之后使用dsl读入时，字符串中将以'\字符'的形式存在
+            //转义时要对此进行特殊处理
+            src = src.Replace("\\a", "\a").Replace("\\b", "\b").Replace("\\f", "\f").Replace("\\v", "\v");
             for (int i = 0; i < src.Length; ++i) {
                 char c = src[i];
                 string es = Escape(c);

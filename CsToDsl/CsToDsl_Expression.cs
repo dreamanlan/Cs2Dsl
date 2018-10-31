@@ -59,20 +59,16 @@ namespace RoslynTool.CsToDsl
                 string rightType = "null";
                 string leftTypeKind = "null";
                 string rightTypeKind = "null";
-                bool leftTypeIsCs2Dsl = false;
-                bool rightTypeIsCs2Dsl = false;
                 if (null != boper) {
                     if (null != boper.LeftOperand) {
                         var ltype = boper.LeftOperand.Type;
                         leftType = ClassInfo.GetFullName(ltype);
                         leftTypeKind = ltype.TypeKind.ToString();
-                        leftTypeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(ltype);
                     }
                     if (null != boper.RightOperand) {
                         var rtype = boper.RightOperand.Type;
                         rightType = ClassInfo.GetFullName(rtype);
                         rightTypeKind = rtype.TypeKind.ToString();
-                        rightTypeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(rtype);
                     }
                 }
                 ProcessBinaryOperator(node, ref op);
@@ -106,13 +102,19 @@ namespace RoslynTool.CsToDsl
                     }
                     CodeBuilder.Append(")");
                 } else {
-                    CodeBuilder.Append("execbinary(");
-                    CodeBuilder.AppendFormat("\"{0}\", ", op);
-                    OutputExpressionSyntax(node.Left, lopd);
-                    CodeBuilder.Append(", ");
-                    OutputExpressionSyntax(node.Right, ropd);
-                    CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}, {4}, {5}", leftType, rightType, leftTypeKind, rightTypeKind, leftTypeIsCs2Dsl, rightTypeIsCs2Dsl);
-                    CodeBuilder.Append(")");
+                    bool handled = false;
+                    if (op == "==" || op == "!=") {
+                        handled = ProcessEqualOrNotEqual(op, node.Left, node.Right, lopd, ropd);
+                    }
+                    if (!handled) {
+                        CodeBuilder.Append("execbinary(");
+                        CodeBuilder.AppendFormat("\"{0}\", ", op);
+                        OutputExpressionSyntax(node.Left, lopd);
+                        CodeBuilder.Append(", ");
+                        OutputExpressionSyntax(node.Right, ropd);
+                        CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}", leftType, rightType, leftTypeKind, rightTypeKind);
+                        CodeBuilder.Append(")");
+                    }
                 }
             }
         }
@@ -159,7 +161,7 @@ namespace RoslynTool.CsToDsl
         }
         public override void VisitBaseExpression(BaseExpressionSyntax node)
         {
-            CodeBuilder.Append("this.base");
+            CodeBuilder.Append("getinstance(this, \"base\")");
         }
         public override void VisitParenthesizedExpression(ParenthesizedExpressionSyntax node)
         {
@@ -182,7 +184,6 @@ namespace RoslynTool.CsToDsl
             ITypeSymbol typeSym = null;
             string type = "null";
             string typeKind = "null";
-            bool typeIsCs2Dsl = false;
             if (null != unaryOper && null != unaryOper.Operand) {
                 typeSym = unaryOper.Operand.Type;
             } else if (null != assignOper && null != assignOper.Target) {
@@ -191,7 +192,6 @@ namespace RoslynTool.CsToDsl
             if (null != typeSym) {
                 type = ClassInfo.GetFullName(typeSym);
                 typeKind = typeSym.TypeKind.ToString();
-                typeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(typeSym);
             }
             if (null != unaryOper && unaryOper.UsesOperatorMethod) {
                 IMethodSymbol msym = unaryOper.OperatorMethod;
@@ -221,7 +221,7 @@ namespace RoslynTool.CsToDsl
                     CodeBuilder.Append("execbinary(");
                     CodeBuilder.AppendFormat("\"{0}\", ", op);
                     OutputExpressionSyntax(node.Operand, opd);
-                    CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}, {4}, {5}", type, type, typeKind, typeKind, typeIsCs2Dsl, typeIsCs2Dsl);
+                    CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}", type, type, typeKind, typeKind);
                     CodeBuilder.Append(")");
                     CodeBuilder.Append("; return(");
                     OutputExpressionSyntax(node.Operand, opd);
@@ -237,7 +237,7 @@ namespace RoslynTool.CsToDsl
                         CodeBuilder.Append("execunary(");
                         CodeBuilder.AppendFormat("\"{0}\", ", op);
                         OutputExpressionSyntax(node.Operand, opd);
-                        CodeBuilder.AppendFormat(", {0}, {1}, {2}", type, typeKind, typeIsCs2Dsl);
+                        CodeBuilder.AppendFormat(", {0}, {1}", type, typeKind);
                         CodeBuilder.Append(")");
                     }
                 }
@@ -393,13 +393,16 @@ namespace RoslynTool.CsToDsl
                 var msym = sym as IMethodSymbol;
                 string manglingName = NameMangling(msym);
                 if (string.IsNullOrEmpty(className)) {
+                    CodeBuilder.Append("getinstance(");
                     OutputExpressionSyntax(node.Expression);
-                    CodeBuilder.Append(".");
+                    CodeBuilder.Append(", \"");
                 } else {
+                    CodeBuilder.Append("getstatic(");
                     CodeBuilder.Append(className);
-                    CodeBuilder.Append(".");
+                    CodeBuilder.Append(", \"");
                 }
                 CodeBuilder.Append(manglingName);
+                CodeBuilder.Append("\")");
             } else {
                 var msym = sym as IMethodSymbol;
                 if (null != msym) {
@@ -426,28 +429,30 @@ namespace RoslynTool.CsToDsl
                         CodeBuilder.Append("return(");
                     }
                     if (string.IsNullOrEmpty(className)) {
+                        CodeBuilder.Append("callinstance(");
                         CodeBuilder.AppendFormat("{0}", varObjName);
-                        CodeBuilder.Append(".");
+                        CodeBuilder.Append(", \"");
                     } else {
+                        CodeBuilder.Append("callstatic(");
                         CodeBuilder.Append(className);
-                        CodeBuilder.Append(".");
+                        CodeBuilder.Append(", \"");
                     }
                     CodeBuilder.Append(manglingName);
-                    CodeBuilder.AppendFormat("({0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                    CodeBuilder.AppendFormat("\", {0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
 
                     CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
                     if (string.IsNullOrEmpty(className)) {
                         CodeBuilder.AppendFormat("{0}", varObjName);
-                        CodeBuilder.Append(", ");
+                        CodeBuilder.Append(", getinstance(");
                         CodeBuilder.AppendFormat("{0}", varObjName);
                     } else {
                         CodeBuilder.Append(className);
-                        CodeBuilder.Append(", ");
+                        CodeBuilder.Append(", getstatic(");
                         CodeBuilder.Append(className);
                     }
-                    CodeBuilder.Append(".");
+                    CodeBuilder.Append(", \"");
                     CodeBuilder.Append(manglingName);
-                    CodeBuilder.AppendFormat("); return({0}); }})()", varName);
+                    CodeBuilder.AppendFormat("\")); return({0}); }})()", varName);
                 } else {
                     var psym = sym as IPropertySymbol;
                     string fnOfIntf = string.Empty;
@@ -917,25 +922,26 @@ namespace RoslynTool.CsToDsl
                             CodeBuilder.Append("return(");
                         }
                         if (msym.IsStatic) {
+                            CodeBuilder.Append("callstatic(");
                             CodeBuilder.Append(className);
-                            CodeBuilder.Append(".");
+                            CodeBuilder.Append(", \"");
                         } else {
-                            CodeBuilder.Append("this.");
+                            CodeBuilder.Append("callinstance(this, \"");
                         }
                         CodeBuilder.Append(manglingName);
-                        CodeBuilder.AppendFormat("({0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                        CodeBuilder.AppendFormat("\", {0}){1}; }})", paramsString, msym.ReturnsVoid ? string.Empty : ")");
 
                         CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
                         if (msym.IsStatic) {
                             CodeBuilder.Append(className);
-                            CodeBuilder.Append(", ");
+                            CodeBuilder.Append(", getstatic(");
                             CodeBuilder.Append(className);
                         } else {
-                            CodeBuilder.Append("this, this");
+                            CodeBuilder.Append("this, getinstance(this");
                         }
-                        CodeBuilder.Append(".");
+                        CodeBuilder.Append(", \"");
                         CodeBuilder.Append(manglingName);
-                        CodeBuilder.AppendFormat("); return({0}); }})()", varName);
+                        CodeBuilder.AppendFormat("\"); return({0}); }})()", varName);
                     } else {
                         VisitArgumentList(node.ArgumentList);
                     }

@@ -533,6 +533,64 @@ namespace RoslynTool.CsToDsl
                 CodeBuilder.Append(", ");
             }
         }
+        private bool ProcessEqualOrNotEqual(string op, ExpressionSyntax left, ExpressionSyntax right, IConversionExpression lopd, IConversionExpression ropd)
+        {
+            bool handled = false;
+            var leftOper = m_Model.GetOperation(left);
+            var rightOper = m_Model.GetOperation(right);
+            if (null != leftOper && null != rightOper && null != leftOper.Type && leftOper.Type.TypeKind == TypeKind.Delegate && (!leftOper.ConstantValue.HasValue || null != leftOper.ConstantValue.Value) && rightOper.ConstantValue.HasValue && rightOper.ConstantValue.Value == null) {
+                var sym = m_Model.GetSymbolInfo(left);
+                bool isEvent = (null != leftOper && leftOper is IEventReferenceExpression) || (null != rightOper && rightOper is IEventReferenceExpression);
+                OutputDelegationCompareWithNull(sym.Symbol, left, SymbolTable.Instance.IsCs2DslSymbol(leftOper.Type), isEvent, op == "==", lopd);
+                handled = true;
+            } else if (null != leftOper && null != rightOper && null != rightOper.Type && rightOper.Type.TypeKind == TypeKind.Delegate && (!rightOper.ConstantValue.HasValue || null != rightOper.ConstantValue.Value) && leftOper.ConstantValue.HasValue && leftOper.ConstantValue.Value == null) {
+                var sym = m_Model.GetSymbolInfo(right);
+                bool isEvent = (null != leftOper && leftOper is IEventReferenceExpression) || (null != rightOper && rightOper is IEventReferenceExpression);
+                OutputDelegationCompareWithNull(sym.Symbol, right, SymbolTable.Instance.IsCs2DslSymbol(rightOper.Type), isEvent, op == "==", ropd);
+                handled = true;
+            }
+            return handled;
+        }
+        private void OutputDelegationCompareWithNull(ISymbol leftSym, ExpressionSyntax left, bool isCs2LuaAssembly, bool isEvent, bool isEqual, IConversionExpression opd)
+        {
+            if (null == leftSym) {
+                Log(left, "delegation compare with null, left symbol == null");
+                return;
+            }
+            bool isStatic = leftSym.IsStatic;
+            var ci = m_ClassInfoStack.Peek();
+            CodeBuilder.AppendFormat("{0}delegationcomparewithnil({1}, {2}, ", isCs2LuaAssembly ? string.Empty : "extern", isEvent ? "true" : "false", isStatic ? "true" : "false");
+            if (leftSym.Kind == SymbolKind.Field || leftSym.Kind == SymbolKind.Property || leftSym.Kind == SymbolKind.Event) {
+                string containingName = ClassInfo.GetFullName(leftSym.ContainingType);
+                var memberAccess = left as MemberAccessExpressionSyntax;
+                if (null != memberAccess) {
+                    CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, memberAccess.Name.Identifier.Text);
+                    OutputExpressionSyntax(memberAccess.Expression, opd);
+                    CodeBuilder.Append(", ");
+                    string intf = "nil";
+                    string mname = string.Format("\"{0}\"", memberAccess.Name.Identifier.Text);
+                    CheckExplicitInterfaceAccess(leftSym, ref intf, ref mname);
+                    CodeBuilder.AppendFormat("{0}, {1}", intf, mname);
+                } else if (leftSym.ContainingType == ci.SemanticInfo || leftSym.ContainingType == ci.SemanticInfo.OriginalDefinition || ci.IsInherit(leftSym.ContainingType)) {
+                    CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, leftSym.Name);
+                    if (isStatic)
+                        CodeBuilder.AppendFormat("{0}, nil, ", ClassInfo.GetFullName(leftSym.ContainingType));
+                    else
+                        CodeBuilder.Append("this, nil, ");
+                    CodeBuilder.AppendFormat("\"{0}\"", leftSym.Name);
+                } else {
+                    CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, leftSym.Name);
+                    OutputExpressionSyntax(left, opd);
+                    CodeBuilder.Append(", nil, nil");
+                }
+            } else {
+                string containingName = ClassInfo.GetFullName(leftSym.ContainingType);
+                CodeBuilder.AppendFormat("\"{0}:{1}\", ", containingName, leftSym.Name);
+                OutputExpressionSyntax(left, opd);
+                CodeBuilder.Append(", nil, nil");
+            }
+            CodeBuilder.AppendFormat(", {0})", isEqual ? "true" : "false");
+        }
         private void AddToplevelClass(string key, ClassInfo ci)
         {
             List<ClassInfo> list;
@@ -837,19 +895,19 @@ namespace RoslynTool.CsToDsl
         {
             switch (c) {
                 case '\a':
-                    return "\\a";
+                    return "\\\\a";
                 case '\b':
-                    return "\\b";
+                    return "\\\\b";
                 case '\f':
-                    return "\\f";
+                    return "\\\\f";
                 case '\n':
-                    return "\\n";
+                    return "\n";
                 case '\r':
-                    return "\\r";
+                    return "\r";
                 case '\t':
-                    return "\\t";
+                    return "\t";
                 case '\v':
-                    return "\\v";
+                    return "\\\\v";
                 case '\\':
                     return "\\\\";
                 case '\"':

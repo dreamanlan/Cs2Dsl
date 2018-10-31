@@ -33,14 +33,12 @@ namespace RoslynTool.CsToDsl
                         op = op == "++" ? "+" : "-";
                         string type = "null";
                         string typeKind = "null";
-                        bool typeIsCs2Dsl = false;
                         IConversionExpression opd = null;
                         var assignOper = m_Model.GetOperation(postfixUnary) as ICompoundAssignmentExpression; 
                         if (null != assignOper && null != assignOper.Target) {
                             var typeSym = assignOper.Target.Type;
                             type = ClassInfo.GetFullName(typeSym);
                             typeKind = typeSym.TypeKind.ToString();
-                            typeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(typeSym);
                             opd = assignOper.Value as IConversionExpression;
                         }
                         CodeBuilder.AppendFormat("{0}", GetIndentString());
@@ -57,7 +55,7 @@ namespace RoslynTool.CsToDsl
                             CodeBuilder.Append("execbinary(");
                             CodeBuilder.AppendFormat("\"{0}\", ", op);
                             OutputExpressionSyntax(postfixUnary.Operand);
-                            CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}, {4}, {5}", type, type, typeKind, typeKind, typeIsCs2Dsl, typeIsCs2Dsl);
+                            CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}", type, type, typeKind, typeKind);
                             CodeBuilder.AppendFormat("){0}", expTerminater);
                         }
                         if (expTerminater.Length > 0)
@@ -264,13 +262,7 @@ namespace RoslynTool.CsToDsl
                     OutputWrapValueParams(CodeBuilder, mi);
                 }
                 if (!string.IsNullOrEmpty(mi.OriginalParamsName)) {
-                    if (mi.ParamsIsValueType) {
-                        CodeBuilder.AppendFormat("{0}local{{{1} = valuetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
-                    } else if (mi.ParamsIsExternValueType) {
-                        CodeBuilder.AppendFormat("{0}local{{{1} = externvaluetypeparams()}};", GetIndentString(), mi.OriginalParamsName);
-                    } else {
-                        CodeBuilder.AppendFormat("{0}local{{{1} = params()}};", GetIndentString(), mi.OriginalParamsName);
-                    }
+                    CodeBuilder.AppendFormat("{0}local{{{1} = params({2});}};", GetIndentString(), mi.OriginalParamsName, mi.ParamsIsExternValueType ? 2 : (mi.ParamsIsValueType ? 1 : 0));
                     CodeBuilder.AppendLine();
                 }
             }
@@ -607,7 +599,6 @@ namespace RoslynTool.CsToDsl
                 ITypeSymbol typeSym = null;
                 string type = "null";
                 string typeKind = "null";
-                bool typeIsCs2Dsl = false;
                 if (null != unaryOper && null != unaryOper.Operand) {
                     typeSym = unaryOper.Operand.Type;
                 } else if (null != assignOper && null != assignOper.Target) {
@@ -616,7 +607,6 @@ namespace RoslynTool.CsToDsl
                 if (null != typeSym) {
                     type = ClassInfo.GetFullName(typeSym);
                     typeKind = typeSym.TypeKind.ToString();
-                    typeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(typeSym);
                 }
                 if (null != unaryOper && unaryOper.UsesOperatorMethod) {
                     IMethodSymbol msym = unaryOper.OperatorMethod;
@@ -641,7 +631,7 @@ namespace RoslynTool.CsToDsl
                         CodeBuilder.Append("execbinary(");
                         CodeBuilder.AppendFormat("\"{0}\", ", op);
                         OutputExpressionSyntax(prefixUnary.Operand, opd);
-                        CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}, {4}, {5}", type, type, typeKind, typeKind, typeIsCs2Dsl, typeIsCs2Dsl);
+                        CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}", type, type, typeKind, typeKind);
                         CodeBuilder.AppendFormat("){0}", expTerminater);
                         if (expTerminater.Length > 0)
                             CodeBuilder.AppendLine();
@@ -655,7 +645,7 @@ namespace RoslynTool.CsToDsl
                             CodeBuilder.Append("execunary(");
                             CodeBuilder.AppendFormat("\"{0}\", ", op);
                             OutputExpressionSyntax(prefixUnary.Operand, opd);
-                            CodeBuilder.AppendFormat(", {0}, {1}, {2}", type, typeKind, typeIsCs2Dsl);
+                            CodeBuilder.AppendFormat(", {0}, {1}", type, typeKind);
                         }
                         CodeBuilder.AppendFormat("){0}", expTerminater);
                         if (expTerminater.Length > 0)
@@ -675,14 +665,12 @@ namespace RoslynTool.CsToDsl
                 ITypeSymbol typeSym = null;
                 string type = "null";
                 string typeKind = "null";
-                bool typeIsCs2Dsl = false;
                 if (null != assignOper && null != assignOper.Target) {
                     typeSym = assignOper.Target.Type;
                 }
                 if (null != typeSym) {
                     type = ClassInfo.GetFullName(typeSym);
                     typeKind = typeSym.TypeKind.ToString();
-                    typeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(typeSym);
                 }
                 if (null != assignOper && assignOper.UsesOperatorMethod) {
                     OutputExpressionSyntax(postfixUnary.Operand, opd);
@@ -701,7 +689,7 @@ namespace RoslynTool.CsToDsl
                         CodeBuilder.Append("execbinary(");
                         CodeBuilder.AppendFormat("\"{0}\", ", op);
                         OutputExpressionSyntax(postfixUnary.Operand, opd);
-                        CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}, {4}, {5}", type, type, typeKind, typeKind, typeIsCs2Dsl, typeIsCs2Dsl);
+                        CodeBuilder.AppendFormat(", 1, {0}, {1}, {2}, {3}", type, type, typeKind, typeKind);
                         CodeBuilder.AppendFormat("){0}", expTerminater);
                         if (expTerminater.Length > 0)
                             CodeBuilder.AppendLine();
@@ -905,8 +893,6 @@ namespace RoslynTool.CsToDsl
                         string rtype = "null";
                         string ltypeKind = "null";
                         string rtypeKind = "null";
-                        bool ltypeIsCs2Dsl = false;
-                        bool rtypeIsCs2Dsl = false;
                         if (null != compAssignInfo && null != compAssignInfo.Target && null != compAssignInfo.Value) {
                             ltypeSym = compAssignInfo.Target.Type;
                             rtypeSym = compAssignInfo.Value.Type;
@@ -914,8 +900,6 @@ namespace RoslynTool.CsToDsl
                             rtype = ClassInfo.GetFullName(rtypeSym);
                             ltypeKind = ltypeSym.TypeKind.ToString();
                             rtypeKind = rtypeSym.TypeKind.ToString();
-                            ltypeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(ltypeSym);
-                            rtypeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(rtypeSym);
                         }
                         ProcessBinaryOperator(assign, ref baseOp);
                         string functor;
@@ -931,7 +915,7 @@ namespace RoslynTool.CsToDsl
                             OutputExpressionSyntax(assign.Left, lopd);
                             CodeBuilder.Append(", ");
                             OutputExpressionSyntax(assign.Right, ropd);
-                            CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}, {4}, {5}", ltype, rtype, ltypeKind, rtypeKind, ltypeIsCs2Dsl, rtypeIsCs2Dsl);
+                            CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}", ltype, rtype, ltypeKind, rtypeKind);
                             CodeBuilder.Append(")");
                         }
                     }
@@ -1094,20 +1078,16 @@ namespace RoslynTool.CsToDsl
                 string rightType = "null";
                 string leftTypeKind = "null";
                 string rightTypeKind = "null";
-                bool leftTypeIsCs2Dsl = false;
-                bool rightTypeIsCs2Dsl = false;
                 if (null != compAssignInfo) {
                     ltype = compAssignInfo.Target.Type;
                     rtype = compAssignInfo.Value.Type;
                     if (null != ltype) {
                         leftType = ClassInfo.GetFullName(ltype);
                         leftTypeKind = ltype.TypeKind.ToString();
-                        leftTypeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(ltype);
                     }
                     if (null != rtype) {
                         rightType = ClassInfo.GetFullName(rtype);
                         rightTypeKind = rtype.TypeKind.ToString();
-                        rightTypeIsCs2Dsl = SymbolTable.Instance.IsCs2DslSymbol(rtype);
                     }
                 }
 
@@ -1179,7 +1159,7 @@ namespace RoslynTool.CsToDsl
                         if (null != ropd && ropd.UsesOperatorMethod) {
                             CodeBuilder.Append(")");
                         }
-                        CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}, {4}, {5}", leftType, rightType, leftTypeKind, rightTypeKind, leftTypeIsCs2Dsl, rightTypeIsCs2Dsl);
+                        CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}", leftType, rightType, leftTypeKind, rightTypeKind);
                         CodeBuilder.Append(")");
                     } else if (null != opd && opd.UsesOperatorMethod) {
                         if (ct > 0) {
@@ -1250,7 +1230,7 @@ namespace RoslynTool.CsToDsl
                         if (null != ropd && ropd.UsesOperatorMethod) {
                             CodeBuilder.Append(")");
                         }
-                        CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}, {4}, {5}", leftType, rightType, leftTypeKind, rightTypeKind, leftTypeIsCs2Dsl, rightTypeIsCs2Dsl);
+                        CodeBuilder.AppendFormat(", {0}, {1}, {2}, {3}", leftType, rightType, leftTypeKind, rightTypeKind);
                         CodeBuilder.Append(")");
                     } else if (null != opd && opd.UsesOperatorMethod) {
                         if (ct > 0) {
