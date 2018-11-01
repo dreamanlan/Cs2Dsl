@@ -84,6 +84,10 @@ namespace RoslynTool.CsToDsl
             var opdr = m_Model.GetOperation(node.RightExpression) as IConversionExpression;
             OutputExpressionSyntax(node.RightExpression, opdr);
             CodeBuilder.Append("); }))");
+
+            if (null != node.Into) {
+                VisitJoinIntoClause(node.Into);
+            }
         }
         public override void VisitJoinIntoClause(JoinIntoClauseSyntax node)
         {

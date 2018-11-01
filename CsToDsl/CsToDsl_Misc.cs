@@ -246,28 +246,17 @@ namespace RoslynTool.CsToDsl
                             string className = ClassInfo.GetFullName(msym.ContainingType);
                             string delegationKey = string.Format("{0}:{1}", className, manglingName);
                             string varName = string.Format("__compiler_delegation_{0}", GetSourcePosForVar(node));
-                            CodeBuilder.AppendFormat("(function(){{ local({0}); {0} = ", varName);
+                            
+                            CodeBuilder.Append("(function(){ ");
 
-                            CodeBuilder.Append("(function(");
                             string paramsString = string.Join(", ", mi.ParamNames.ToArray());
-                            CodeBuilder.Append(paramsString);
-                            if (sym.IsStatic) {
-                                CodeBuilder.AppendFormat("){{ {0}callstatic({1}, \"{2}\", {3}){4}; }})", msym.ReturnsVoid ? string.Empty : "return(", classInfo.Key, manglingName, paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                            if (msym.IsStatic) {
+                                CodeBuilder.AppendFormat("builddelegation(\"{0}\", {1}, \"{2}\", {3}, {4}, {5}, {6});", paramsString, varName, delegationKey, className, manglingName, msym.ReturnsVoid ? "false" : "true", msym.IsStatic ? "true" : "false");
                             } else {
-                                CodeBuilder.AppendFormat("){{ {0}callinstance(this, \"{1}\", {2}){3}; }})", msym.ReturnsVoid ? string.Empty : "return(", manglingName, paramsString, msym.ReturnsVoid ? string.Empty : ")");
+                                CodeBuilder.AppendFormat("builddelegation(\"{0}\", {1}, \"{2}\", {3}, {4}, {5}, {6});", paramsString, varName, delegationKey, "this", manglingName, msym.ReturnsVoid ? "false" : "true", msym.IsStatic ? "true" : "false");
                             }
 
-                            CodeBuilder.AppendFormat("; setdelegationkey({0}, \"{1}\", ", varName, delegationKey);
-                            if (sym.IsStatic) {
-                                CodeBuilder.Append(classInfo.Key);
-                                CodeBuilder.Append(", getstatic(");
-                                CodeBuilder.Append(classInfo.Key);
-                            } else {
-                                CodeBuilder.Append("this, getinstance(this");
-                            }
-                            CodeBuilder.Append(", \"");
-                            CodeBuilder.Append(manglingName);
-                            CodeBuilder.AppendFormat("\")); return({0}); }})()", varName);
+                            CodeBuilder.Append(" })()");
                         }
                         return;
                     }

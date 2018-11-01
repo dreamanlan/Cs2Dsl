@@ -464,7 +464,7 @@ namespace RoslynTool.CsToDsl
                         }
                     } else if (type.TypeKind == TypeKind.Delegate) {
                         CodeBuilder.AppendFormat("{0}{1}", GetIndentString(), name);
-                        CodeBuilder.Append(" = delegation()");
+                        CodeBuilder.Append(" = initdelegation()");
                     } else if (type.IsValueType) {
                         if (SymbolTable.IsBasicType(type)) {
                             CodeBuilder.AppendFormat("{0}{1} = ", GetIndentString(), name);
@@ -537,7 +537,7 @@ namespace RoslynTool.CsToDsl
                         }
                         CodeBuilder.Append(")");
                     } else {
-                        CodeBuilder.AppendFormat("{0}{1} = delegation()", GetIndentString(), name);
+                        CodeBuilder.AppendFormat("{0}{1} = initdelegation()", GetIndentString(), name);
                     }
                     CodeBuilder.Append(";");
                     CodeBuilder.AppendLine();

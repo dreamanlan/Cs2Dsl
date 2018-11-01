@@ -386,7 +386,7 @@ namespace JsGenerator
                     prestr = ", ";
                 }
                 sb.Append(")");
-            } else if (id == "dictionaryinit") {
+            } else if (id == "builddictionary") {
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -400,7 +400,7 @@ namespace JsGenerator
                     prestr = ", ";
                 }
                 sb.Append("}");
-            } else if (id == "listinit" || id == "collectioninit" || id == "arrayinit") {
+            } else if (id == "buildlist" || id == "buildcollection" || id == "buildarray") {
                 sb.Append("[");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {

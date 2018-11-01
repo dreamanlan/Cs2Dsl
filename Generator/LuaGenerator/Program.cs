@@ -581,6 +581,8 @@ namespace LuaGenerator
                             id = "__cs2lua_nil_field_value";
                         else
                             id = "nil";
+                    } else if (id == "__cs2dsl_out") {
+                        id = "__cs2lua_out";
                     }
                     sb.Append(id);
                     break;
@@ -653,6 +655,9 @@ namespace LuaGenerator
                     GenerateSyntaxComponent(param, sb, indent, false);
                     prestr = ", ";
                 }
+            } else if (id == "ref" || id == "out") {
+                var param = data.GetParam(0);
+                GenerateSyntaxComponent(param, sb, indent, false);
             } else if (id == "return") {
                 sb.Append("return ");
                 string prestr = string.Empty;
@@ -912,8 +917,35 @@ namespace LuaGenerator
                 }
             } else if (id == "paramsremove") {
                 sb.AppendFormat("table.remove({0})", data.GetParamId(0));
-            } else if (id == "delegation") {
+            } else if (id == "initdelegation") {
                 sb.Append("wrapdelegation{}");
+            } else if (id == "builddelegation") {
+                var paramsString = data.GetParamId(0);
+                var varName = data.GetParamId(1);
+                var delegationKey = data.GetParamId(2);
+                var objOrClassName = CalcTypeString(data.GetParam(3));
+                var methodName = data.GetParamId(4);
+                var needReturn = data.GetParamId(5) == "true";
+                var isStatic = data.GetParamId(6) == "true";
+
+                sb.AppendFormat("local {0}; {0} = ", varName);
+                sb.Append("(function(");
+                sb.Append(paramsString);
+                sb.Append(") ");
+                if (needReturn) {
+                    sb.Append("return ");
+                }
+                sb.Append(objOrClassName);
+                if (isStatic) {
+                    sb.Append(".");
+                } else {
+                    sb.Append(":");
+                }
+                sb.Append(methodName);
+                sb.AppendFormat("({0}); end)", paramsString);
+
+                sb.AppendFormat("; setdelegationkey({0}, \"{1}\", {2}, {3}.{4});", varName, delegationKey, objOrClassName, objOrClassName, methodName);
+                sb.AppendFormat(" return {0}", varName);
             } else if (id == "anonymousobject") {
                 sb.Append("wrapdictionary{");
                 string prestr = string.Empty;
@@ -924,7 +956,7 @@ namespace LuaGenerator
                     prestr = ", ";
                 }
                 sb.Append("}");
-            } else if (id == "dictionaryinit") {
+            } else if (id == "builddictionary") {
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -937,7 +969,7 @@ namespace LuaGenerator
                     prestr = ", ";
                 }
                 sb.Append("}");
-            } else if (id == "listinit" || id == "collectioninit" || id == "complexinit" || id == "objectinit") {
+            } else if (id == "buildlist" || id == "buildcollection" || id == "buildcomplex" || id == "buildobject") {
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -947,7 +979,7 @@ namespace LuaGenerator
                     prestr = ", ";
                 }
                 sb.Append("}");
-            } else if (id == "arrayinit") {
+            } else if (id == "buildarray") {
                 sb.Append("wraparray({");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -1270,9 +1302,6 @@ namespace LuaGenerator
         private static string Escape(string src)
         {
             StringBuilder sb = new StringBuilder();
-            //dsl语言只显示处理'\0'、"\xhh"、"\ooo"转义，其它都以实际字符保存在源代码中，以下4个特殊的控制字符无法在源代码中保存，cs2dsl会保存成'\\字符'的形式，之后使用dsl读入时，字符串中将以'\字符'的形式存在
-            //转义时要对此进行特殊处理
-            src = src.Replace("\\a", "\a").Replace("\\b", "\b").Replace("\\f", "\f").Replace("\\v", "\v");
             for (int i = 0; i < src.Length; ++i) {
                 char c = src[i];
                 string es = Escape(c);

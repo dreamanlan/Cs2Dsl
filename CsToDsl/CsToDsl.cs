@@ -895,19 +895,19 @@ namespace RoslynTool.CsToDsl
         {
             switch (c) {
                 case '\a':
-                    return "\\\\a";
+                    return "\\a";
                 case '\b':
-                    return "\\\\b";
+                    return "\\b";
                 case '\f':
-                    return "\\\\f";
+                    return "\\f";
                 case '\n':
-                    return "\n";
+                    return "\\n";
                 case '\r':
-                    return "\r";
+                    return "\\r";
                 case '\t':
-                    return "\t";
+                    return "\\t";
                 case '\v':
-                    return "\\\\v";
+                    return "\\v";
                 case '\\':
                     return "\\\\";
                 case '\"':
