@@ -241,7 +241,7 @@ namespace RoslynTool.CsToDsl
                     codeBuilder.Append("invokeforbasicvalue(");
                     cs2dsl.OutputExpressionSyntax(exp);
                     codeBuilder.Append(", ");
-                    codeBuilder.AppendFormat("{0}, {1}, \"{2}\"", ClassKey == SymbolTable.PrefixExternClassName("System.Enum") ? "true" : "false", ckey, mname);
+                    codeBuilder.AppendFormat("{0}, {1}, \"{2}\"", ckey == SymbolTable.PrefixExternClassName("System.Enum") ? "true" : "false", ckey, mname);
                     prestr = ", ";
                 } else if (IsArrayStaticMethod) {
                     codeBuilder.Append("invokearraystaticmethod(");

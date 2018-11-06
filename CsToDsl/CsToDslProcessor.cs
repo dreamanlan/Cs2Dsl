@@ -964,7 +964,10 @@ namespace RoslynTool.CsToDsl
                     ++indent;
 
                     if (string.IsNullOrEmpty(exportConstructor)) {
-                        sb.AppendFormat("{0}return(newobject({1}, null, null, ...));", GetIndentString(indent), key);
+                        sb.AppendFormat("{0}return(newobject({1}, ", GetIndentString(indent), key);
+                        var namedTypeSym = csi.TypeSymbol;
+                        CsDslTranslater.OutputTypeArgsInfo(sb, namedTypeSym);
+                        sb.Append("null, null, ...));");
                         sb.AppendLine();
                     } else {
                         //处理ref/out参数
@@ -976,10 +979,16 @@ namespace RoslynTool.CsToDsl
                                 sb.Append(", ");
                                 sb.Append(retArgStr);
                             }
-                            sb.AppendFormat(") = newobject({0}, \"{1}\", null, ...); return(newobj); }})(...));", key, exportConstructor);
+                            sb.AppendFormat(") = newobject({0}, ", key);
+                            var namedTypeSym = csi.TypeSymbol;
+                            CsDslTranslater.OutputTypeArgsInfo(sb, namedTypeSym);
+                            sb.AppendFormat("\"{0}\", null, ...); return(newobj); }})(...));", exportConstructor);
                             sb.AppendLine();
                         } else {
-                            sb.AppendFormat("{0}return(newobject({1}, \"{2}\", null, ...));", GetIndentString(indent), key, exportConstructor);
+                            sb.AppendFormat("{0}return(newobject({1}, ", GetIndentString(indent), key);
+                            var namedTypeSym = csi.TypeSymbol;
+                            CsDslTranslater.OutputTypeArgsInfo(sb, namedTypeSym);
+                            sb.AppendFormat("\"{0}\", null, ...));", exportConstructor);
                             sb.AppendLine();
                         }
                     }

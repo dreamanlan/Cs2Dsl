@@ -259,7 +259,7 @@ namespace JsGenerator
                         var cd = param1 as Dsl.CallData;
                         if (null != cd) {
                             if (cd.GetParamNum() > 1) {
-                                string varName = string.Format("__compiler_multiassign_{0}", data.GetLine());
+                                string varName = string.Format("__multiassign_{0}", data.GetLine());
                                 sb.AppendFormat("var {0}", varName);
                                 sb.AppendFormat(" {0} ", id);
                                 GenerateSyntaxComponent(param2, sb, indent, false, paramsStart);

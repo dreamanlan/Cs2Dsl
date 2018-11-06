@@ -38,7 +38,7 @@ namespace RoslynTool.CsToDsl
                         if (null != assignOper && null != assignOper.Target) {
                             var typeSym = assignOper.Target.Type;
                             type = ClassInfo.GetFullName(typeSym);
-                            typeKind = typeSym.TypeKind.ToString();
+                            typeKind = "TypeKind." + typeSym.TypeKind.ToString();
                             opd = assignOper.Value as IConversionExpression;
                         }
                         CodeBuilder.AppendFormat("{0}", GetIndentString());
@@ -252,7 +252,7 @@ namespace RoslynTool.CsToDsl
             string dslFuncName = ClassInfo.GetAttributeArgument<string>(declSym, "Cs2Dsl.TranslateToAttribute", 1);
             if (string.IsNullOrEmpty(dslModule) && string.IsNullOrEmpty(dslFuncName)) {
                 if (!declSym.ReturnsVoid && mi.ExistTryCatch) {
-                    string retVar = string.Format("__compiler_method_ret_{0}", GetSourcePosForVar(node));
+                    string retVar = string.Format("__method_ret_{0}", GetSourcePosForVar(node));
                     mi.ReturnVarName = retVar;
 
                     CodeBuilder.AppendFormat("{0}local({1}); {1} = nil;", GetIndentString(), retVar);
@@ -307,7 +307,7 @@ namespace RoslynTool.CsToDsl
                     }
                 }
             } else if (null != expressionBody) {
-                string varName = string.Format("__compiler_expbody_{0}", GetSourcePosForVar(node));
+                string varName = string.Format("__expbody_{0}", GetSourcePosForVar(node));
                 if (!declSym.ReturnsVoid) {
                     if (mi.ReturnParamNames.Count > 0) {
                         CodeBuilder.AppendFormat("{0}local({1}); {1} = ", GetIndentString(), varName);
@@ -606,7 +606,7 @@ namespace RoslynTool.CsToDsl
                 }
                 if (null != typeSym) {
                     type = ClassInfo.GetFullName(typeSym);
-                    typeKind = typeSym.TypeKind.ToString();
+                    typeKind = "TypeKind." + typeSym.TypeKind.ToString();
                 }
                 if (null != unaryOper && unaryOper.UsesOperatorMethod) {
                     IMethodSymbol msym = unaryOper.OperatorMethod;
@@ -670,7 +670,7 @@ namespace RoslynTool.CsToDsl
                 }
                 if (null != typeSym) {
                     type = ClassInfo.GetFullName(typeSym);
-                    typeKind = typeSym.TypeKind.ToString();
+                    typeKind = "TypeKind." + typeSym.TypeKind.ToString();
                 }
                 if (null != assignOper && assignOper.UsesOperatorMethod) {
                     OutputExpressionSyntax(postfixUnary.Operand, opd);
@@ -718,7 +718,7 @@ namespace RoslynTool.CsToDsl
                 var token = node.Initializer.EqualsToken;
                 var invocation = node.Initializer.Value as InvocationExpressionSyntax;
                 if (null != invocation) {
-                    string localName = string.Format("__compiler_localdecl_{0}", GetSourcePosForVar(invocation));
+                    string localName = string.Format("__localdecl_{0}", GetSourcePosForVar(invocation));
                     SymbolInfo symInfo = m_Model.GetSymbolInfo(invocation);
                     IMethodSymbol sym = symInfo.Symbol as IMethodSymbol;
 
@@ -898,8 +898,8 @@ namespace RoslynTool.CsToDsl
                             rtypeSym = compAssignInfo.Value.Type;
                             ltype = ClassInfo.GetFullName(ltypeSym);
                             rtype = ClassInfo.GetFullName(rtypeSym);
-                            ltypeKind = ltypeSym.TypeKind.ToString();
-                            rtypeKind = rtypeSym.TypeKind.ToString();
+                            ltypeKind = "TypeKind." + ltypeSym.TypeKind.ToString();
+                            rtypeKind = "TypeKind." + rtypeSym.TypeKind.ToString();
                         }
                         ProcessBinaryOperator(assign, ref baseOp);
                         string functor;
@@ -1059,7 +1059,7 @@ namespace RoslynTool.CsToDsl
         }
         private void VisitAssignmentInvocation(ClassInfo ci, string op, string baseOp, AssignmentExpressionSyntax assign, InvocationExpressionSyntax invocation, IConversionExpression opd, IConversionExpression lopd, IConversionExpression ropd, ICompoundAssignmentExpression compAssignInfo)
         {
-            string localName = string.Format("__compiler_assigninvoke_{0}", GetSourcePosForVar(invocation));
+            string localName = string.Format("__assigninvoke_{0}", GetSourcePosForVar(invocation));
             SymbolInfo symInfo = m_Model.GetSymbolInfo(invocation);
             IMethodSymbol sym = symInfo.Symbol as IMethodSymbol;
             if (null == sym || op != "=" && (null == compAssignInfo || null == compAssignInfo.Target || null == compAssignInfo.Value)) {
@@ -1083,11 +1083,11 @@ namespace RoslynTool.CsToDsl
                     rtype = compAssignInfo.Value.Type;
                     if (null != ltype) {
                         leftType = ClassInfo.GetFullName(ltype);
-                        leftTypeKind = ltype.TypeKind.ToString();
+                        leftTypeKind = "TypeKind." + ltype.TypeKind.ToString();
                     }
                     if (null != rtype) {
                         rightType = ClassInfo.GetFullName(rtype);
-                        rightTypeKind = rtype.TypeKind.ToString();
+                        rightTypeKind = "TypeKind." + rtype.TypeKind.ToString();
                     }
                 }
 
@@ -1312,7 +1312,7 @@ namespace RoslynTool.CsToDsl
         }
         private void VisitInvocation(ClassInfo ci, InvocationExpressionSyntax invocation, string expTerminater, bool toplevel)
         {
-            string localName = string.Format("__compiler_invoke_{0}", GetSourcePosForVar(invocation));
+            string localName = string.Format("__invoke_{0}", GetSourcePosForVar(invocation));
             SymbolInfo symInfo = m_Model.GetSymbolInfo(invocation);
             IMethodSymbol sym = symInfo.Symbol as IMethodSymbol;
 

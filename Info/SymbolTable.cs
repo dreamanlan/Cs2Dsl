@@ -507,10 +507,10 @@ namespace RoslynTool.CsToDsl
         {
             if (name.StartsWith("@")) {
                 change = true;
-                return "__compiler_cs_" + name.Substring(1);
+                return "__cs_" + name.Substring(1);
             } else if (s_ExtraDslKeywords.Contains(name)) {
                 change = true;
-                return "__compiler_dsl_" + name;
+                return "__dsl_" + name;
             } else {
                 change = false;                
                 return name;
