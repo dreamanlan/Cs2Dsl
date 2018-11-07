@@ -1835,7 +1835,15 @@ function invokeexternoperator(class, method, ...)
 	local argnum = #args;
 	if method=="op_Equality" then
 	  if args[1] and args[2] then
-	    return args[1]==args[2];
+	  	mt1 = getmetatable(args[1]);
+	  	mt2 = getmetatable(args[2]);
+	  	if mt1 and mt1.__eq then
+	  		return mt1.__eq(args[1], args[2]);
+	  	elseif mt2 and mt2.__eq then
+	  		return mt2.__eq(args[2], args[1]);
+	  	else
+	    	return args[1]==args[2];
+	    end;
 	  elseif not args[1] then
 	    return Slua.IsNull(args[2]);
 	  elseif not args[2] then
@@ -1845,7 +1853,15 @@ function invokeexternoperator(class, method, ...)
 	  end;
 	elseif method=="op_Inequality" then
 	  if args[1] and args[2] then
-	    return args[1]~=args[2];
+	  	mt1 = getmetatable(args[1]);
+	  	mt2 = getmetatable(args[2]);
+	  	if mt1 and mt1.__eq then
+	  		return not mt1.__eq(args[1], args[2]);
+	  	elseif mt2 and mt2.__eq then
+	  		return not mt2.__eq(args[2], args[1]);
+	  	else
+	    	return args[1]~=args[2];
+	    end;
 	  elseif not args[1] then
 	    return not Slua.IsNull(args[2]);
 	  elseif not args[2] then
