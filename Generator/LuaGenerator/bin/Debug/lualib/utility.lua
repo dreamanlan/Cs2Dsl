@@ -1570,6 +1570,13 @@ function delegationcomparewithnil(isevent, isStatic, key, t, inf, k, isequal)
   if k then
     v = t[k];  
   end;
+  if type(v)=="function" then
+  	if isequal then 
+      return false;
+    else
+      return true;
+    end;
+  end;
   local n = #v;
   if isequal and n==0 then
     return true;
@@ -1586,13 +1593,15 @@ function delegationset(isevent, isStatic, key, t, intf, k, handler)
   end;
   if not v or type(v)~="table" then
   	--取不到值或者值不是表，则有可能是普通的特性访问
-  	t[k] = handler;
+  	--t[k] = handler;
+  	return handler;
   else
 	  local n = #v;
 	  for i=1,n do
 	    table.remove(v);
 	  end;
 	  table.insert(v,handler);
+	  return v;
   end;
 end;
 function delegationadd(isevent, isStatic, key, t, intf, k, handler)
@@ -1601,6 +1610,7 @@ function delegationadd(isevent, isStatic, key, t, intf, k, handler)
     v = t[k];  
   end;
   table.insert(v, handler);
+  return v;
 end;
 function delegationremove(isevent, isStatic, key, t, intf, k, handler)
   local v = t;
@@ -1628,6 +1638,7 @@ function delegationremove(isevent, isStatic, key, t, intf, k, handler)
     table.remove(v, pos);
     removedelegationkey(handler);
   end;
+  return v;
 end;
 
 __extern_delegation_str_func = {}
@@ -1693,9 +1704,10 @@ function externdelegationcomparewithnil(isevent, isStatic, key, t, inf, k, isequ
 end;
 function externdelegationset(isevent, isStatic, key, t, intf, k, handler)
   if k then
-    t[k] = handler;
+    --t[k] = handler;
+    return handler;
   else
-    t = handler;
+    return handler;
   end;
 end;
 function externdelegationadd(isevent, isStatic, key, t, intf, k, handler)
@@ -1704,9 +1716,11 @@ function externdelegationadd(isevent, isStatic, key, t, intf, k, handler)
     setexterndelegationfunc(str .. key, handler);
   end;
   if k then
-    t[k] = {"+=", handler};
+    --t[k] = {"+=", handler};
+    return {"+=", handler};
   else
-    t = {"+=", handler};
+    --t = {"+=", handler};
+    return {"+=", handler};
   end;
 end;
 function externdelegationremove(isevent, isStatic, key, t, intf, k, handler)
@@ -1715,15 +1729,19 @@ function externdelegationremove(isevent, isStatic, key, t, intf, k, handler)
   if str then
     trueHandler = getexterndelegationfunc(str .. key);
   end;
+  local ret = nil;
   if k then
-    t[k] = {"-=", trueHandler};
+    --t[k] = {"-=", trueHandler};
+    ret = {"-=", trueHandler};
   else
-    t = {"-=", trueHandler};
+    --t = {"-=", trueHandler};
+    ret = {"-=", trueHandler};
   end;
   removedelegationkey(handler);
   if str then
     removeexterndelegationfunc(str .. key, trueHandler);
   end;
+  return ret;
 end;
 
 function getstaticindexer(class, name, ...)
