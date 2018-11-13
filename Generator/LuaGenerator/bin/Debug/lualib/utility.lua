@@ -71,6 +71,12 @@ Slua = Slua or {out={}};
 __cs2lua_out = Slua.out;
 __cs2lua_nil_field_value = {};
 
+Cs2LuaLibrary = {
+	ToString = function(T, val)
+		return tostring(val);
+	end,
+};
+
 TypeKind = {
 	Unknown = 0,
 	Array = 1,
