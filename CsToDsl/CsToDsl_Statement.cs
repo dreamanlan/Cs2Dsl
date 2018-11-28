@@ -210,6 +210,13 @@ namespace RoslynTool.CsToDsl
 
             if (null != node.Declaration)
                 VisitVariableDeclaration(node.Declaration);
+            if (null != node.Initializers && node.Initializers.Count > 0) {
+                foreach (var exp in node.Initializers) {
+                    var opd = m_Model.GetOperation(exp) as IConversionExpression;
+                    OutputExpressionSyntax(exp, opd);
+                    CodeBuilder.Append(";");
+                }
+            }
             CodeBuilder.AppendFormat("{0}while( ", GetIndentString());
             if (null != node.Condition) {
                 var oper = m_Model.GetOperation(node) as IForLoopStatement;
