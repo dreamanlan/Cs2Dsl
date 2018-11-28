@@ -212,6 +212,7 @@ namespace RoslynTool.CsToDsl
                 VisitVariableDeclaration(node.Declaration);
             if (null != node.Initializers && node.Initializers.Count > 0) {
                 foreach (var exp in node.Initializers) {
+                    CodeBuilder.AppendFormat("{0}", GetIndentString());
                     VisitToplevelExpression(exp, ";");
                 }
             }
