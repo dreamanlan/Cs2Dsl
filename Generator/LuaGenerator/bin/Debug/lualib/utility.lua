@@ -2173,7 +2173,7 @@ function luathrow(obj)
 end;
 
 function luaunpack(arr)
-	var mt = getmetatable(arr);
+	local mt = getmetatable(arr);
 	if mt and mt.__cs2lua_defined then
 		return unpack(arr);
 	else
