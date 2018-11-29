@@ -386,7 +386,7 @@ namespace JsGenerator
                     prestr = ", ";
                 }
                 sb.Append(")");
-            } else if (id == "builddictionary") {
+            } else if (id == "literaldictionary") {
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -400,7 +400,7 @@ namespace JsGenerator
                     prestr = ", ";
                 }
                 sb.Append("}");
-            } else if (id == "buildlist" || id == "buildcollection" || id == "buildarray") {
+            } else if (id == "literallist" || id == "literalcollection") {
                 sb.Append("[");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -410,6 +410,18 @@ namespace JsGenerator
                     prestr = ", ";
                 }
                 sb.Append("]");
+            } else if (id == "buildarray") {
+                sb.Append("[");
+                string prestr = string.Empty;
+                for (int ix = 1; ix < data.Params.Count; ++ix) {
+                    var param = data.Params[ix];
+                    sb.Append(prestr);
+                    GenerateSyntaxComponent(param, sb, indent, false, paramsStart);
+                    prestr = ", ";
+                }
+                sb.Append("]");
+            } else if (id == "newarray") {
+                sb.Append("new Array()");
             } else {
                 if (null != callData) {
                     GenerateSyntaxComponent(callData, sb, indent, false, paramsStart);

@@ -2172,6 +2172,19 @@ function luathrow(obj)
   end;
 end;
 
+function luaunpack(arr)
+	var mt = getmetatable(arr);
+	if mt and mt.__cs2lua_defined then
+		return unpack(arr);
+	else
+		return arr;
+	end;
+end;
+
+function chararraytostring(arr)
+	string.char(unpack(arr));
+end;
+
 LINQ={};
 LINQ.exec = function(linq)
   local paramList = {};
