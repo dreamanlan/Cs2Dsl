@@ -7,10 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cs2Dsl", "Cs2Dsl.csproj", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cs2DslUtility", "Cs2DslUtility\Cs2DslUtility.csproj", "{8512D1C7-F979-4A86-853C-764A5568E16A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsGenerator", "Generator\JsGenerator\JsGenerator.csproj", "{9BA0C1DC-D32B-4C68-B06B-C8475E16535E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LuaGenerator", "Generator\LuaGenerator\LuaGenerator.csproj", "{75D5F348-EF07-481D-A6C4-95C5F7774D51}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,14 +21,6 @@ Global
 		{8512D1C7-F979-4A86-853C-764A5568E16A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8512D1C7-F979-4A86-853C-764A5568E16A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8512D1C7-F979-4A86-853C-764A5568E16A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9BA0C1DC-D32B-4C68-B06B-C8475E16535E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9BA0C1DC-D32B-4C68-B06B-C8475E16535E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9BA0C1DC-D32B-4C68-B06B-C8475E16535E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9BA0C1DC-D32B-4C68-B06B-C8475E16535E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{75D5F348-EF07-481D-A6C4-95C5F7774D51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{75D5F348-EF07-481D-A6C4-95C5F7774D51}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{75D5F348-EF07-481D-A6C4-95C5F7774D51}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{75D5F348-EF07-481D-A6C4-95C5F7774D51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

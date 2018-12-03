@@ -5,9 +5,9 @@ using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace LuaGenerator
+namespace Generator
 {
-    static class StringBuilderExtension
+    internal static class StringBuilderExtension
     {
         public static void AppendFormatLine(this StringBuilder sb, string format, params object[] args)
         {
@@ -15,23 +15,32 @@ namespace LuaGenerator
             sb.AppendLine();
         }
     }
-    class Program
+    internal static class LuaGenerator
     {
-        static void Main(string[] args)
+        internal static void Generate(string csprojPath, string outPath, string ext)
         {
-            string path = "dsl";
-            if (args.Length > 0) {
-                path = args[0];
+            if (string.IsNullOrEmpty(outPath)) {
+                outPath = Path.Combine(csprojPath, "dsl");
+            } else if (!Path.IsPathRooted(outPath)) {
+                outPath = Path.Combine(csprojPath, outPath);
             }
+
             s_ExePath = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
-            s_OutPath = path;
-            File.Copy(Path.Combine(s_ExePath, "lualib/utility.lua"), Path.Combine(s_OutPath, "cs2lua__utility.txt"), true);
-            var files = Directory.GetFiles(s_OutPath, "*.dsl", SearchOption.TopDirectoryOnly);
+            s_SrcPath = Path.Combine(csprojPath, "dsl");
+            s_OutPath = outPath;
+            s_Ext = ext;
+            if (!Directory.Exists(s_OutPath)) {
+                Directory.CreateDirectory(s_OutPath);
+            }
+            File.Copy(Path.Combine(s_ExePath, "lualib/utility.lua"), Path.Combine(s_OutPath, "cs2lua__utility." + s_Ext), true);
+            var files = Directory.GetFiles(s_SrcPath, "*.dsl", SearchOption.TopDirectoryOnly);
             foreach (string file in files) {
                 try {
+                    string fileName = Path.GetFileName(file);
+
                     Dsl.DslFile dslFile = new Dsl.DslFile();
                     dslFile.Load(file, s => Log(file, s));
-                    GenerateLua(dslFile, Path.ChangeExtension(file.Replace("cs2dsl__", "cs2lua__"), "txt"));
+                    GenerateLua(dslFile, Path.Combine(s_OutPath, Path.ChangeExtension(file.Replace("cs2dsl__", "cs2lua__"), s_Ext)));
                 } catch (Exception ex) {
                     Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
                     System.Environment.Exit(-1);
@@ -53,7 +62,7 @@ namespace LuaGenerator
                 if (id == "require") {
                     string requireFileName = callData.GetParamId(0).Replace("cs2dsl__", "cs2lua__");
                     string srcPath = Path.Combine(s_ExePath, string.Format("lualib/{0}.lua", requireFileName));
-                    string destPath = Path.Combine(s_OutPath, string.Format("{0}.txt", requireFileName));
+                    string destPath = Path.Combine(s_OutPath, string.Format("{0}.{1}", requireFileName, s_Ext));
                     if (!File.Exists(destPath) && File.Exists(srcPath)) {
                         File.Copy(srcPath, destPath, true);
                     }
@@ -523,7 +532,144 @@ namespace LuaGenerator
 
                     sb.AppendLine();
 
-                    sb.AppendFormatLine("{0}return defineclass({1}, \"{2}\", static, static_methods, static_fields_build, static_props, static_events, instance_methods, instance_fields_build, instance_props, instance_events, interfaces, interface_map, {3});", GetIndentString(indent), null == baseClass ? "nil" : baseClassName, className, isValueType ? "true" : "false");
+                    var classInfo = FindStatement(funcData, "class_info") as Dsl.FunctionData;
+                    if (null != classInfo) {
+                        sb.AppendFormatLine("{0}local class_info = {{", GetIndentString(indent));
+                        ++indent;
+                        var kind = CalcTypeString(classInfo.Call.GetParam(0));
+                        var accessibility = CalcTypeString(classInfo.Call.GetParam(1));
+                        sb.AppendFormatLine("{0}Kind = {1},", GetIndentString(indent), kind);
+                        if (accessibility == "Accessibility.Private") {
+                            sb.AppendFormatLine("{0}private = true,", GetIndentString(indent));
+                        }
+                        foreach (var def in classInfo.Statements) {
+                            var mdef = def as Dsl.CallData;
+                            string key = mdef.GetId();
+                            string val = mdef.GetParamId(0);
+                            sb.AppendFormatLine("{0}{1} = {2},", GetIndentString(indent), key, val);
+                        }
+                        --indent;
+                        sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                    }
+
+                    var methodInfo = FindStatement(funcData, "method_info") as Dsl.FunctionData;
+                    if (null != methodInfo && methodInfo.GetStatementNum() > 0) {
+                        sb.AppendFormatLine("{0}local method_info = {{", GetIndentString(indent));
+                        ++indent;
+                        foreach (var def in methodInfo.Statements) {
+                            var mfunc = def as Dsl.FunctionData;
+                            if (null != mfunc) {
+                                sb.AppendFormatLine("{0}{1} = {{", GetIndentString(indent), mfunc.GetId());
+                                ++indent;
+                                var kind = CalcTypeString(mfunc.Call.GetParam(0));
+                                var accessibility = CalcTypeString(mfunc.Call.GetParam(1));
+                                sb.AppendFormatLine("{0}Kind = {1},", GetIndentString(indent), kind);
+                                if (accessibility == "Accessibility.Private") {
+                                    sb.AppendFormatLine("{0}private = true,", GetIndentString(indent));
+                                }
+                                foreach (var minfo in mfunc.Statements) {
+                                    var mdef = minfo as Dsl.CallData;
+                                    string key = mdef.GetId();
+                                    string val = mdef.GetParamId(0);
+                                    sb.AppendFormatLine("{0}{1} = {2},", GetIndentString(indent), key, val);
+                                }
+                                --indent;
+                                sb.AppendFormatLine("{0}}},", GetIndentString(indent));
+                            }
+                        }
+                        --indent;
+                        sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                    } else {
+                        sb.AppendFormatLine("{0}local method_info = nil;", GetIndentString(indent));
+                    }
+
+                    var propertyInfo = FindStatement(funcData, "property_info") as Dsl.FunctionData;
+                    if (null != propertyInfo && propertyInfo.GetStatementNum() > 0) {
+                        sb.AppendFormatLine("{0}local property_info = {{", GetIndentString(indent));
+                        ++indent;
+                        foreach (var def in propertyInfo.Statements) {
+                            var mfunc = def as Dsl.FunctionData;
+                            if (null != mfunc) {
+                                sb.AppendFormatLine("{0}{1} = {{", GetIndentString(indent), mfunc.GetId());
+                                ++indent;
+                                var accessibility = CalcTypeString(mfunc.Call.GetParam(0));
+                                if (accessibility == "Accessibility.Private") {
+                                    sb.AppendFormatLine("{0}private = true,", GetIndentString(indent));
+                                }
+                                foreach (var minfo in mfunc.Statements) {
+                                    var mdef = minfo as Dsl.CallData;
+                                    string key = mdef.GetId();
+                                    string val = mdef.GetParamId(0);
+                                    sb.AppendFormatLine("{0}{1} = {2},", GetIndentString(indent), key, val);
+                                }
+                                --indent;
+                                sb.AppendFormatLine("{0}}},", GetIndentString(indent));
+                            }
+                        }
+                        --indent;
+                        sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                    } else {
+                        sb.AppendFormatLine("{0}local property_info = nil;", GetIndentString(indent));
+                    }
+
+                    var eventInfo = FindStatement(funcData, "event_info") as Dsl.FunctionData;
+                    if (null != eventInfo && eventInfo.GetStatementNum() > 0) {
+                        sb.AppendFormatLine("{0}local field_info = {{", GetIndentString(indent));
+                        ++indent;
+                        foreach (var def in eventInfo.Statements) {
+                            var mfunc = def as Dsl.FunctionData;
+                            if (null != mfunc) {
+                                sb.AppendFormatLine("{0}{1} = {{", GetIndentString(indent), mfunc.GetId());
+                                ++indent;
+                                var accessibility = CalcTypeString(mfunc.Call.GetParam(0));
+                                if (accessibility == "Accessibility.Private") {
+                                    sb.AppendFormatLine("{0}private = true,", GetIndentString(indent));
+                                }
+                                foreach (var minfo in mfunc.Statements) {
+                                    var mdef = minfo as Dsl.CallData;
+                                    string key = mdef.GetId();
+                                    string val = mdef.GetParamId(0);
+                                    sb.AppendFormatLine("{0}{1} = {2},", GetIndentString(indent), key, val);
+                                }
+                                --indent;
+                                sb.AppendFormatLine("{0}}},", GetIndentString(indent));
+                            }
+                        }
+                        --indent;
+                        sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                    } else {
+                        sb.AppendFormatLine("{0}local event_info = nil;", GetIndentString(indent));
+                    }
+
+                    var fieldInfo = FindStatement(funcData, "field_info") as Dsl.FunctionData;
+                    if (null != fieldInfo && fieldInfo.GetStatementNum() > 0) {
+                        sb.AppendFormatLine("{0}local field_info = {{", GetIndentString(indent));
+                        ++indent;
+                        foreach (var def in fieldInfo.Statements) {
+                            var mfunc = def as Dsl.FunctionData;
+                            if (null != mfunc) {
+                                sb.AppendFormatLine("{0}{1} = {{", GetIndentString(indent), mfunc.GetId());
+                                ++indent;
+                                var accessibility = CalcTypeString(mfunc.Call.GetParam(0));
+                                foreach (var minfo in mfunc.Statements) {
+                                    var mdef = minfo as Dsl.CallData;
+                                    string key = mdef.GetId();
+                                    string val = mdef.GetParamId(0);
+                                    sb.AppendFormatLine("{0}{1} = {2},", GetIndentString(indent), key, val);
+                                }
+                                --indent;
+                                sb.AppendFormatLine("{0}}},", GetIndentString(indent));
+                            }
+                        }
+                        --indent;
+                        sb.AppendFormatLine("{0}}};", GetIndentString(indent));
+                    } else {
+                        sb.AppendFormatLine("{0}local field_info = nil;", GetIndentString(indent));
+                    }
+
+                    sb.AppendLine();
+
+                    sb.AppendFormatLine("{0}return defineclass({1}, \"{2}\", static, static_methods, static_fields_build, static_props, static_events, instance_methods, instance_fields_build, instance_props, instance_events, interfaces, interface_map, class_info, method_info, property_info, event_info, field_info, {3});", GetIndentString(indent), null == baseClass ? "nil" : baseClassName, className, isValueType ? "true" : "false");
 
                     --indent;
                     sb.AppendFormatLine("{0}end,", GetIndentString(indent));
@@ -696,9 +842,25 @@ namespace LuaGenerator
                     intOp = "-";
                 int intOpIndex;
                 if (IsIntegerType(type1, typeKind1) && TryGetSpecialIntegerOperatorIndex(intOp, out intOpIndex)) {
-                    sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, intOp);
-                    GenerateSyntaxComponent(p1, sb, indent, false);
-                    sb.AppendFormat(", 1, {0}, {1})", type1, type1);
+                    if (op == "++" || op == "--") {
+                        if (s_IntegerTypes.Contains(type1)) {
+                            sb.Append("(");
+                            GenerateSyntaxComponent(p1, sb, indent, false);
+                            sb.AppendFormat(" {0} 1)", intOp);
+                        } else {
+                            sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, intOp);
+                            GenerateSyntaxComponent(p1, sb, indent, false);
+                            sb.AppendFormat(", 1, {0}, {1})", type1, type1);
+                        }
+                    } if (s_IntegerTypes.Contains(type1) && (op == "+" || op == "-")) {
+                        sb.AppendFormat("( {0} ", intOp);
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.Append(")");
+                    } else {
+                        sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", nil, ", intOpIndex, intOp);
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.AppendFormat(", nil, {0})", type1, type1);
+                    }
                 } else {
                     string functor;
                     if (s_UnaryFunctor.TryGetValue(op, out functor)) {
@@ -722,11 +884,19 @@ namespace LuaGenerator
                 string typeKind2 = CalcTypeString(data.GetParam(6));
                 int intOpIndex;
                 if (IsIntegerType(type1, typeKind1) && IsIntegerType(type2, typeKind2) && TryGetSpecialIntegerOperatorIndex(op, out intOpIndex)) {
-                    sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, op);
-                    GenerateSyntaxComponent(p1, sb, indent, false);
-                    sb.Append(", ");
-                    GenerateSyntaxComponent(p2, sb, indent, false);
-                    sb.AppendFormat(", {0}, {1})", type1, type2);
+                    if (s_IntegerTypes.Contains(type1) && s_IntegerTypes.Contains(type2) && (op == "+" || op == "-" || op == "%")) {
+                        sb.Append("(");
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.AppendFormat(" {0} ", op);
+                        GenerateSyntaxComponent(p2, sb, indent, false);
+                        sb.Append(")");
+                    } else {
+                        sb.AppendFormat("invokeintegeroperator({0}, \"{1}\", ", intOpIndex, op);
+                        GenerateSyntaxComponent(p1, sb, indent, false);
+                        sb.Append(", ");
+                        GenerateSyntaxComponent(p2, sb, indent, false);
+                        sb.AppendFormat(", {0}, {1})", type1, type2);
+                    }
                 } else if (op == "+" && (type1 == "System.String" || type2 == "System.String")) {
                     bool tostr1 = type1 != "System.String";
                     bool tostr2 = type2 != "System.String";
@@ -859,8 +1029,13 @@ namespace LuaGenerator
             } else if (id == "callstatic") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
+                var objCd = member as Dsl.CallData;
                 GenerateSyntaxComponent(obj, sb, indent, false);
-                sb.AppendFormat(".{0}", member.GetId());
+                if (null != objCd && objCd.GetId() == "getinstance" && objCd.GetParamNum() == 2 && objCd.GetParamId(1) == "base") {
+                    sb.AppendFormat(".__self__{0}", member.GetId());
+                } else {
+                    sb.AppendFormat(".{0}", member.GetId());
+                }
                 sb.Append("(");
                 string prestr = string.Empty;
                 for (int ix = 2; ix < data.Params.Count; ++ix) {
@@ -1461,7 +1636,9 @@ namespace LuaGenerator
         }
 
         private static string s_ExePath = string.Empty;
+        private static string s_SrcPath = string.Empty;
         private static string s_OutPath = string.Empty;
+        private static string s_Ext = string.Empty;
         //下面这个list的顺序要与utility.lua里的整数操作表__cs2lua_special_integer_operators一致（索引用作操作符识别常量）
         private static List<string> s_SpecialIntegerOperators = new List<string> { "/", "%", "+", "-", "*", "<<", ">>", "&", "|", "^", "~" };
         

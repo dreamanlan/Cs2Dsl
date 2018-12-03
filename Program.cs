@@ -13,10 +13,12 @@ namespace RoslynTool
 {
     partial class Program
     {
-        static int Main(string[] args)
+        static void Main(string[] args)
         {
             try {
                 string file = "test.cs";
+                string outputDir = string.Empty;
+                string outputExt = "txt";
                 List<string> macros = new List<string>();
                 List<string> undefMacros = new List<string>();
                 List<string> ignoredPath = new List<string>();
@@ -24,13 +26,30 @@ namespace RoslynTool
                 List<string> internPath = new List<string>();
                 Dictionary<string, string> refByNames = new Dictionary<string, string>();
                 Dictionary<string, string> refByPaths = new Dictionary<string, string>();
+                bool genLua = true;
                 bool enableInherit = false;
                 bool enableLinq = false;
                 bool outputResult = false;
                 bool parallel = false;
                 if (args.Length > 0) {
                     for (int i = 0; i < args.Length; ++i) {
-                        if (0 == string.Compare(args[i], "-d", true)) {
+                        if (0 == string.Compare(args[i], "-ext", true)) {
+                            if (i < args.Length - 1) {
+                                string arg = args[i + 1];
+                                if (!arg.StartsWith("-")) {
+                                    outputExt = arg;
+                                    ++i;
+                                }
+                            }
+                        } else if (0 == string.Compare(args[i], "-out", true)) {
+                            if (i < args.Length - 1) {
+                                string arg = args[i + 1];
+                                if (!arg.StartsWith("-")) {
+                                    outputDir = arg;
+                                    ++i;
+                                }
+                            }
+                        } else if (0 == string.Compare(args[i], "-d", true)) {
                             if (i < args.Length - 1) {
                                 string arg = args[i + 1];
                                 if (!arg.StartsWith("-")) {
@@ -89,6 +108,10 @@ namespace RoslynTool
                                     ++i;
                                 }
                             }
+                        } else if (0 == string.Compare(args[i], "-lua", true)) {
+                            genLua = true;
+                        } else if (0 == string.Compare(args[i], "-js", true)) {
+                            genLua = false;
                         } else if (0 == string.Compare(args[i], "-enableinherit", true)) {
                             enableInherit = true;
                         } else if (0 == string.Compare(args[i], "-enablelinq", true)) {
@@ -103,8 +126,6 @@ namespace RoslynTool
                             SymbolTable.DslComponentByString = true;
                         } else if (0 == string.Compare(args[i], "-usearraygetset", true)) {
                             SymbolTable.UseArrayGetSet = true;
-                        } else if (0 == string.Compare(args[i], "-arraylowerboundisone", true)) {
-                            SymbolTable.ArrayLowerBoundIsOne = true;
                         } else if (0 == string.Compare(args[i], "-refbyname", true)) {
                             string name = string.Empty, alias = "global";
                             if (i < args.Length - 1) {
@@ -168,8 +189,9 @@ namespace RoslynTool
                         }
                     }
                 } else {
-                    Console.WriteLine("[Usage]:Cs2Dsl [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-arraylowerboundisone] [-d macro] [-u macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
+                    Console.WriteLine("[Usage]:Cs2Dsl [-out dir] [-ext fileext] [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-arraylowerboundisone] [-d macro] [-u macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
                     Console.WriteLine("\twhere:");
+                    Console.WriteLine("\t\tfileext = file externsion, default is txt for unity3d, maybe lua for other usage.");
                     Console.WriteLine("\t\tmacro = c# macro define, used in your csharp code #if/#elif/#else/#endif etc.");
                     Console.WriteLine("\t\tinternpath = only c# source file path in the csproj as intern class, only these classes translate to dsl.");
                     Console.WriteLine("\t\texternpath = mark c# source file path in the csproj as extern class (API), these classes doesn't translate to dsl.");
@@ -183,14 +205,24 @@ namespace RoslynTool
                         Console.WriteLine();
                     }
                 }
+                if (genLua) {
+                    SymbolTable.ArrayLowerBoundIsOne = true;
+                } else {
+                    SymbolTable.ArrayLowerBoundIsOne = false;
+                }
                 if (File.Exists(file)) {
                     var stopwatch = Stopwatch.StartNew();
                     var result = (int)CsToDslProcessor.Process(file, macros, undefMacros, ignoredPath, externPath, internPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult, parallel);
                     stopwatch.Stop();
                     Console.WriteLine("RunningTime: {0}s", stopwatch.Elapsed.TotalSeconds);
-                    return result;
+                    if (genLua) {
+                        Generator.LuaGenerator.Generate(Path.GetDirectoryName(file), outputDir, outputExt);
+                    } else {
+                        Generator.JsGenerator.Generate(Path.GetDirectoryName(file), outputDir, outputExt);
+                    }
+                    Environment.Exit(result);
                 } else {
-                    return (int)ExitCode.FileNotFound;
+                    Environment.Exit((int)ExitCode.FileNotFound);
                 }
             } catch (Exception ex) {
                 Console.WriteLine("exception:{0}", ex.Message);
@@ -201,7 +233,7 @@ namespace RoslynTool
                     Console.WriteLine("inner exception:{0}", ex.Message);
                     Console.WriteLine("{0}", ex.StackTrace);
                 }
-                return (int)ExitCode.Exception;
+                Environment.Exit((int)ExitCode.Exception);
             }
         }
     }

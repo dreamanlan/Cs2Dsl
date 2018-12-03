@@ -5,30 +5,31 @@ using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace JsGenerator
+namespace Generator
 {
-    static class StringBuilderExtension
+    internal class JsGenerator
     {
-        public static void AppendFormatLine(this StringBuilder sb, string format, params object[] args)
+        internal static void Generate(string csprojPath, string outPath, string ext)
         {
-            sb.AppendFormat(format, args);
-            sb.AppendLine();
-        }
-    }
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            string path = "dsl";
-            if (args.Length > 0) {
-                path = args[0];
+            if (string.IsNullOrEmpty(outPath)) {
+                outPath = Path.Combine(csprojPath, "dsl");
+            } else if (!Path.IsPathRooted(outPath)) {
+                outPath = Path.Combine(csprojPath, outPath);
             }
-            var files = Directory.GetFiles(path, "*.dsl", SearchOption.TopDirectoryOnly);
+
+            s_ExePath = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
+            s_SrcPath = Path.Combine(csprojPath, "dsl");
+            s_OutPath = outPath;
+            s_Ext = ext;
+            if (!Directory.Exists(s_OutPath)) {
+                Directory.CreateDirectory(s_OutPath);
+            }
+            var files = Directory.GetFiles(s_SrcPath, "*.dsl", SearchOption.TopDirectoryOnly);
             foreach (string file in files) {
                 try {
                     Dsl.DslFile dslFile = new Dsl.DslFile();
                     dslFile.Load(file, s => Log(file, s));
-                    GenerateJs(dslFile, Path.ChangeExtension(file, "js"));
+                    GenerateJs(dslFile, Path.Combine(s_OutPath, Path.ChangeExtension(file.Replace("cs2dsl__", "cs2js__"), s_Ext)));
                 } catch (Exception ex) {
                     Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
                     System.Environment.Exit(-1);
@@ -46,7 +47,7 @@ namespace JsGenerator
                 var funcData = dslInfo.First;
                 var callData = funcData.Call;
                 if (id == "require") {
-                    sb.AppendFormatLine("{0}require(\"{1}.js\");", GetIndentString(indent), callData.GetParamId(0));
+                    sb.AppendFormatLine("{0}require(\"{1}.js\");", GetIndentString(indent), callData.GetParamId(0).Replace("cs2dsl__", "cs2js__"));
                 } else if (id == "enum") {
 
                 } else if (id == "class" || id == "struct") {
@@ -611,5 +612,10 @@ namespace JsGenerator
                     return c.ToString();
             }
         }
+
+        private static string s_ExePath = string.Empty;
+        private static string s_SrcPath = string.Empty;
+        private static string s_OutPath = string.Empty;
+        private static string s_Ext = string.Empty;
     }
 }
