@@ -19,6 +19,7 @@ namespace Generator
 
             s_ExePath = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
             s_SrcPath = Path.Combine(csprojPath, "dsl");
+            s_LogPath = Path.Combine(csprojPath, "log");
             s_OutPath = outPath;
             s_Ext = ext;
             if (!Directory.Exists(s_OutPath)) {
@@ -32,9 +33,11 @@ namespace Generator
                     GenerateJs(dslFile, Path.Combine(s_OutPath, Path.ChangeExtension(file.Replace("cs2dsl__", "cs2js__"), s_Ext)));
                 } catch (Exception ex) {
                     Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
+                    File.WriteAllText(Path.Combine(s_LogPath, "Generator.log"), s_LogBuilder.ToString());
                     System.Environment.Exit(-1);
                 }
             }
+            File.WriteAllText(Path.Combine(s_LogPath, "Generator.log"), s_LogBuilder.ToString());
             System.Environment.Exit(0);
         }
         private static void GenerateJs(Dsl.DslFile dslFile, string outputFile)
@@ -563,7 +566,7 @@ namespace Generator
         }
         private static void Log(string file, string msg)
         {
-            Console.WriteLine("[{0}]:{1}", file, msg);
+            s_LogBuilder.AppendFormatLine("[{0}]:{1}", file, msg);
         }
         private static string GetIndentString(int indent)
         {
@@ -615,7 +618,9 @@ namespace Generator
 
         private static string s_ExePath = string.Empty;
         private static string s_SrcPath = string.Empty;
+        private static string s_LogPath = string.Empty;
         private static string s_OutPath = string.Empty;
         private static string s_Ext = string.Empty;
+        private static StringBuilder s_LogBuilder = new StringBuilder();
     }
 }
