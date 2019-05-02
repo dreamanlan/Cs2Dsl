@@ -2277,6 +2277,10 @@ function defaultvalue(t, typename, isExtern)
 	end;
 end;
 
+function luausing(func)
+  return pcall(func);
+end;
+
 function luatry(func)
   return xpcall(func, function(e)
     local err = tostring(e);
@@ -2286,10 +2290,11 @@ function luatry(func)
 end;
 
 function luacatch(handled, ret, err, func)
+	local retval = nil;
   if not handled and not ret then
-    handled = func(handled, {Message=err[1],StackTrace=err[2]});
+    handled, retval = func(handled, {Message=err[1],StackTrace=err[2]});
   end; 
-  return handled;
+  return handled, retval;
 end;
 
 function luathrow(obj)

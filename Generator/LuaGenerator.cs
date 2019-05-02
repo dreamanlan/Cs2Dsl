@@ -1358,6 +1358,8 @@ namespace Generator
                     sb.Append("do");
                 } else if (id == "dslunpack") {
                     sb.Append("luaunpack");
+                } else if (id == "dslusing") {
+                    sb.Append("luausing");
                 } else if (id == "dsltry") {
                     sb.Append("luatry");
                 } else if (id == "dslcatch") {
