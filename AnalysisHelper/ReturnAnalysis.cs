@@ -34,51 +34,51 @@ namespace RoslynTool.CsToDsl
         }
         public override void VisitContinueStatement(ContinueStatementSyntax node)
         {
-            if (!m_IsInLoop) {
+            if (m_InLoop <= 0) {
                 m_ExistContinue = true;
             }
         }
         public override void VisitBreakStatement(BreakStatementSyntax node)
         {
-            if (!m_IsInLoop && !m_IsInSwitch) {
+            if (m_InLoop <= 0 && m_InSwitch <= 0) {
                 m_ExistBreak = true;
             }
         }
         public override void VisitWhileStatement(WhileStatementSyntax node)
         {
-            m_IsInLoop = true;
+            ++m_InLoop;
             base.VisitWhileStatement(node);
-            m_IsInLoop = false;
+            --m_InLoop;
         }
         public override void VisitDoStatement(DoStatementSyntax node)
         {
-            m_IsInLoop = true;
+            ++m_InLoop;
             base.VisitDoStatement(node);
-            m_IsInLoop = false;
+            --m_InLoop;
         }
         public override void VisitForStatement(ForStatementSyntax node)
         {
-            m_IsInLoop = true;
+            ++m_InLoop;
             base.VisitForStatement(node);
-            m_IsInLoop = false;
+            --m_InLoop;
         }
         public override void VisitForEachStatement(ForEachStatementSyntax node)
         {
-            m_IsInLoop = true;
+            ++m_InLoop;
             base.VisitForEachStatement(node);
-            m_IsInLoop = false;
+            --m_InLoop;
         }
         public override void VisitSwitchStatement(SwitchStatementSyntax node)
         {
-            m_IsInSwitch = true;
+            ++m_InSwitch;
             base.VisitSwitchStatement(node);
-            m_IsInSwitch = false;
+            --m_InSwitch;
         }
 
         private bool m_ExistReturn = false;
         private bool m_ExistContinue = false;
         private bool m_ExistBreak = false;
-        private bool m_IsInLoop = false;
-        private bool m_IsInSwitch = false;
+        private int m_InLoop = 0;
+        private int m_InSwitch = 0;
     }
 }
