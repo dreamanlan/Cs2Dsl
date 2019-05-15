@@ -73,6 +73,10 @@ namespace RoslynTool.CsToDsl
         {
             get { return m_Cs2DslInterfaces; }
         }
+        internal HashSet<string> CheckedInvocations
+        {
+            get { return m_CheckedInvocations; }
+        }
         internal void SetTypeParamsAndArgs(List<ITypeParameterSymbol> typeParams, List<ITypeSymbol> typeArgs, INamedTypeSymbol refType)
         {
             m_TypeParameters.Clear();
@@ -378,6 +382,7 @@ namespace RoslynTool.CsToDsl
             internal List<TypeTreeNode> ChildTypeNodes = new List<TypeTreeNode>();
         }
         private Dictionary<string, TypeTreeNode> m_TypeTreeNodes = new Dictionary<string, TypeTreeNode>();
+        private HashSet<string> m_CheckedInvocations = new HashSet<string>();
         
         internal static SymbolTable Instance
         {
@@ -692,6 +697,11 @@ namespace RoslynTool.CsToDsl
             get { return s_ArrayLowerBoundIsOne; }
             set { s_ArrayLowerBoundIsOne = value; }
         }
+        internal static bool EnableTranslationCheck
+        {
+            get { return s_EnableTranslationCheck; }
+            set { s_EnableTranslationCheck = value; }
+        }
         internal static string SystemDllPath
         {
             get { return s_SystemDllPath; }
@@ -702,7 +712,8 @@ namespace RoslynTool.CsToDsl
         private static bool s_NoAutoRequire = false;
         private static bool s_DslComponentByString = false;
         private static bool s_UseArrayGetSet = false;
-        private static bool s_ArrayLowerBoundIsOne = false;
+        private static bool s_ArrayLowerBoundIsOne = true;
+        private static bool s_EnableTranslationCheck = false;
         private static string s_SystemDllPath = string.Empty;
 
         private static HashSet<string> s_ExtraDslKeywords = new HashSet<string> {

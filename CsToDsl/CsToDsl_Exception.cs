@@ -77,6 +77,11 @@ namespace RoslynTool.CsToDsl
                             OutputTryCatchUsingReturn(returnAnalysis1, mi, retVar, catchRetValVar);
                         }
                     }
+                    if (node.Catches.Count > 1) {
+                        if (SymbolTable.EnableTranslationCheck) {
+                            Logger.Instance.Log("Translation Warning", "try have multiple catch ! location: {0}", GetSourcePosForLog(node));
+                        }
+                    }
                 }
             }
             if (null != node.Finally) {

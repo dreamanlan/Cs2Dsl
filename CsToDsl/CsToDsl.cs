@@ -948,6 +948,29 @@ namespace RoslynTool.CsToDsl
             }
             return null;
         }
+        private bool IsLastNodeOfTryCatch(SyntaxNode node)
+        {
+            bool ret = false;
+            var parent = node.Parent;
+            if (null != node && null != parent) {
+                int ix = -1;
+                int ct = 0;
+                var nodes = parent.ChildNodes();
+                var enumer = nodes.GetEnumerator();
+                while (enumer.MoveNext()) {
+                    if (enumer.Current == node) {
+                        ix = ct;
+                    }
+                    ++ct;
+                }
+                ret = ix == ct - 1;
+            }
+            while (null != parent && parent.IsKind(SyntaxKind.Block)) {
+                parent = parent.Parent;
+            }
+            ret = ret && (parent.IsKind(SyntaxKind.TryStatement) || parent.IsKind(SyntaxKind.CatchClause));
+            return ret;
+        }
         private bool IsLastNodeOfMethod(SyntaxNode node)
         {
             bool ret = false;
@@ -1080,6 +1103,8 @@ namespace RoslynTool.CsToDsl
         {
             internal List<string> ParamNames = new List<string>();
             internal string JoinParamName = string.Empty;
+            internal string Prestr = string.Empty;
+            internal string OrderByPrestr = string.Empty;
         }
         private Stack<LinqParamInfo> m_LinqParamInfoStack = new Stack<LinqParamInfo>();
 

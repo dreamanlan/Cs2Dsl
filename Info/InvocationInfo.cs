@@ -320,6 +320,7 @@ namespace RoslynTool.CsToDsl
         private void Init(IMethodSymbol sym)
         {
             MethodSymbol = sym;
+            CheckInvocation(sym);
 
             Args.Clear();
             ArgConversions.Clear();
@@ -414,6 +415,50 @@ namespace RoslynTool.CsToDsl
                     }
                     if (mcount > 1) {
                         ExternOverloadedMethodSignature = SymbolTable.CalcOverloadedMethodSignature(sym, NonGenericMethodSymbol);
+                    }
+                }
+            }
+        }
+        
+        private void CheckInvocation(IMethodSymbol sym)
+        {
+            if (!SymbolTable.EnableTranslationCheck) {
+                return;
+            }
+            if (ClassInfo.HasAttribute(sym, "Cs2Lua.DontCheckAttribute")) {
+                return;
+            }
+            if (null != CallerMethodSymbol && ClassInfo.HasAttribute(CallerMethodSymbol, "Cs2Lua.DontCheckAttribute")) {
+                return;
+            }
+            if (null != CallerTypeSymbol && ClassInfo.HasAttribute(CallerTypeSymbol, "Cs2Lua.DontCheckAttribute")) {
+                return;
+            }
+
+            if (!SymbolTable.Instance.IsCs2DslSymbol(sym)) {
+                var ckey = ClassInfo.GetFullName(sym.ContainingType);
+                var mkey = SymbolTable.Instance.NameMangling(sym);
+                var id = string.Format("{0}.{1}", ckey, mkey);
+                if (!SymbolTable.Instance.CheckedInvocations.Contains(id)) {
+                    SymbolTable.Instance.CheckedInvocations.Add(id);
+
+                    bool isOverload = false;
+                    ClassSymbolInfo info;
+                    if (SymbolTable.Instance.ClassSymbols.TryGetValue(ckey, out info)) {
+                        info.SymbolOverloadFlags.TryGetValue(sym.Name, out isOverload);
+                    }
+
+                    foreach (var param in sym.Parameters) {
+                        if (param.IsParams && isOverload) {
+                            Logger.Instance.Log("Translation Warning", "extern overloaded method {0}.{1} parameter {2} is params, please check export api code !", ckey, sym.Name, param.Name);
+                            continue;
+                        }
+                        var namedType = param.Type as INamedTypeSymbol;
+                        if (null != namedType && !SymbolTable.Instance.IsCs2DslSymbol(namedType) && namedType.IsGenericType && namedType.TypeKind != TypeKind.Delegate) {
+                            var fullName = ClassInfo.GetFullName(namedType);
+                            Logger.Instance.Log("Translation Warning", "extern method {0}.{1} parameter {2} is generic type, please replace with non generic type !", ckey, sym.Name, param.Name);
+                            continue;
+                        }
                     }
                 }
             }
