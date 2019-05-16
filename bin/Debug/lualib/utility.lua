@@ -2036,7 +2036,7 @@ function invokeexternoperator(class, method, ...)
     else
       return false;
     end; 
-  elseif rawget(class, "__is_value_type") and method=="op_Multiply" then
+  elseif method=="op_Multiply" then
   	if argnum==2 then
   		return args[1] * args[2];
   	elseif argnum==3 then
