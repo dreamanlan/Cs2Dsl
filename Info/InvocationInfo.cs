@@ -425,13 +425,13 @@ namespace RoslynTool.CsToDsl
             if (!SymbolTable.EnableTranslationCheck) {
                 return;
             }
-            if (ClassInfo.HasAttribute(sym, "Cs2Lua.DontCheckAttribute")) {
+            if (ClassInfo.HasAttribute(sym, "Cs2Dsl.DontCheckAttribute")) {
                 return;
             }
-            if (null != CallerMethodSymbol && ClassInfo.HasAttribute(CallerMethodSymbol, "Cs2Lua.DontCheckAttribute")) {
+            if (null != CallerMethodSymbol && ClassInfo.HasAttribute(CallerMethodSymbol, "Cs2Dsl.DontCheckAttribute")) {
                 return;
             }
-            if (null != CallerTypeSymbol && ClassInfo.HasAttribute(CallerTypeSymbol, "Cs2Lua.DontCheckAttribute")) {
+            if (null != CallerTypeSymbol && ClassInfo.HasAttribute(CallerTypeSymbol, "Cs2Dsl.DontCheckAttribute")) {
                 return;
             }
 
@@ -473,19 +473,6 @@ namespace RoslynTool.CsToDsl
                     SecondRefArray = exp;
                 }
             }
-        }
-
-        private ITypeSymbol GetElementType(ITypeSymbol typeSym)
-        {
-            while(typeSym.TypeKind == TypeKind.Array) {
-                var arrType = typeSym as IArrayTypeSymbol;
-                if (null != arrType) {
-                    typeSym = arrType.ElementType;
-                } else {
-                    break;
-                }
-            }
-            return typeSym;
         }
 
         internal static void TryAddExternEnum(bool isEnumClass, ExpressionSyntax exp, SemanticModel model)
