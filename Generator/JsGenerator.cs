@@ -414,7 +414,7 @@ namespace Generator
                     prestr = ", ";
                 }
                 sb.Append("]");
-            } else if (id == "buildarray") {
+            } else if (id == "literalarray") {
                 sb.Append("[");
                 string prestr = string.Empty;
                 for (int ix = 1; ix < data.Params.Count; ++ix) {
