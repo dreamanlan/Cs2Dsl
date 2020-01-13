@@ -13,7 +13,8 @@ namespace Generator
         {
             if (string.IsNullOrEmpty(outPath)) {
                 outPath = Path.Combine(csprojPath, "dsl");
-            } else if (!Path.IsPathRooted(outPath)) {
+            }
+            else if (!Path.IsPathRooted(outPath)) {
                 outPath = Path.Combine(csprojPath, outPath);
             }
 
@@ -31,7 +32,8 @@ namespace Generator
                     Dsl.DslFile dslFile = new Dsl.DslFile();
                     dslFile.Load(file, s => Log(file, s));
                     GenerateJs(dslFile, Path.Combine(s_OutPath, Path.ChangeExtension(file.Replace("cs2dsl__", "cs2js__"), s_Ext)));
-                } catch (Exception ex) {
+                }
+                catch (Exception ex) {
                     Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
                     File.WriteAllText(Path.Combine(s_LogPath, "Generator.log"), s_LogBuilder.ToString());
                     System.Environment.Exit(-1);
@@ -51,14 +53,16 @@ namespace Generator
                 var callData = funcData.Call;
                 if (id == "require") {
                     sb.AppendFormatLine("{0}require(\"{1}.js\");", GetIndentString(indent), callData.GetParamId(0).Replace("cs2dsl__", "cs2js__"));
-                } else if (id == "enum") {
+                }
+                else if (id == "enum") {
 
-                } else if (id == "class" || id == "struct") {
+                }
+                else if (id == "class" || id == "struct") {
                     string className = callData.GetParamId(0);
                     var baseClass = callData.GetParam(1);
 
                     sb.AppendLine();
-                    
+
                     sb.AppendFormatLine("{0}function {1}(){{", GetIndentString(indent), className);
                     ++indent;
                     if (null != baseClass) {
@@ -78,7 +82,7 @@ namespace Generator
                                     int paramsStart = 0;
                                     sb.AppendFormat("{0}this.{1} = {2}(", GetIndentString(indent), mname, fcall.GetId());
                                     prestr = string.Empty;
-                                    for (int ix = 1; ix < fcall.Params.Count;++ix ) {
+                                    for (int ix = 1; ix < fcall.Params.Count; ++ix) {
                                         var param = fcall.Params[ix];
                                         string paramId = param.GetId();
                                         if (paramId == "...") {
@@ -90,7 +94,8 @@ namespace Generator
                                         var pv = param as Dsl.ValueData;
                                         if (null != pv) {
                                             sb.Append(paramId);
-                                        } else {
+                                        }
+                                        else {
                                             var pc = param as Dsl.CallData;
                                             if (null != pc) {
                                                 sb.Append(pc.GetParamId(0));
@@ -104,7 +109,8 @@ namespace Generator
                                         string subId = comp.GetId();
                                         if (subId != "comments" && subId != "comment") {
                                             sb.AppendLine(";");
-                                        } else {
+                                        }
+                                        else {
                                             sb.AppendLine();
                                         }
                                     }
@@ -131,7 +137,7 @@ namespace Generator
                     sb.AppendFormatLine("{0}}}", GetIndentString(indent));
 
                     sb.AppendLine();
-                    
+
                     sb.AppendFormatLine("{0}(function(){{", GetIndentString(indent));
                     ++indent;
                     var staticMethods = FindStatement(funcData, "static_methods") as Dsl.FunctionData;
@@ -158,7 +164,8 @@ namespace Generator
                                         var pv = param as Dsl.ValueData;
                                         if (null != pv) {
                                             sb.Append(pv.GetId());
-                                        } else {
+                                        }
+                                        else {
                                             var pc = param as Dsl.CallData;
                                             if (null != pc) {
                                                 sb.Append(pc.GetParamId(0));
@@ -172,7 +179,8 @@ namespace Generator
                                         string subId = comp.GetId();
                                         if (subId != "comments" && subId != "comment") {
                                             sb.AppendLine(";");
-                                        } else {
+                                        }
+                                        else {
                                             sb.AppendLine();
                                         }
                                     }
@@ -206,15 +214,18 @@ namespace Generator
             var valData = comp as Dsl.ValueData;
             if (null != valData) {
                 GenerateConcreteSyntax(valData, sb, indent, firstLineUseIndent, paramsStart);
-            } else {
+            }
+            else {
                 var callData = comp as Dsl.CallData;
                 if (null != callData) {
                     GenerateConcreteSyntax(callData, sb, indent, firstLineUseIndent, paramsStart);
-                } else {
+                }
+                else {
                     var funcData = comp as Dsl.FunctionData;
                     if (null != funcData) {
                         GenerateConcreteSyntax(funcData, sb, indent, firstLineUseIndent, paramsStart);
-                    } else {
+                    }
+                    else {
                         var statementData = comp as Dsl.StatementData;
                         GenerateConcreteSyntax(statementData, sb, indent, firstLineUseIndent, paramsStart);
                     }
@@ -255,7 +266,8 @@ namespace Generator
                     sb.AppendFormat("({0} ", id);
                     GenerateSyntaxComponent(param1, sb, indent, false, paramsStart);
                     sb.Append(")");
-                } else if (paramNum == 2) {
+                }
+                else if (paramNum == 2) {
                     var param1 = data.GetParam(0);
                     var param2 = data.GetParam(1);
                     bool handled = false;
@@ -277,7 +289,8 @@ namespace Generator
                                         sb.Append(";");
                                     }
                                 }
-                            } else {
+                            }
+                            else {
                                 GenerateSyntaxComponent(cd.GetParam(0), sb, indent, false, paramsStart);
                                 sb.AppendFormat(" {0} ", id);
                                 GenerateSyntaxComponent(param2, sb, indent, false, paramsStart);
@@ -295,9 +308,11 @@ namespace Generator
                             sb.Append(")");
                     }
                 }
-            } else if (id == "comment") {
+            }
+            else if (id == "comment") {
                 sb.AppendFormat("//{0}", data.GetParamId(0));
-            } else if (id == "local") {
+            }
+            else if (id == "local") {
                 sb.Append("var ");
                 string prestr = string.Empty;
                 foreach (var param in data.Params) {
@@ -305,7 +320,8 @@ namespace Generator
                     GenerateSyntaxComponent(param, sb, indent, false, paramsStart);
                     prestr = ", ";
                 }
-            } else if (id == "return") {
+            }
+            else if (id == "return") {
                 sb.Append("return ");
                 if (data.GetParamNum() > 1)
                     sb.Append("[");
@@ -317,34 +333,31 @@ namespace Generator
                 }
                 if (data.GetParamNum() > 1)
                     sb.Append("]");
-            } else if (id == "execunary") {
+            }
+            else if (id == "execunary") {
                 string op = data.GetParamId(0);
                 sb.AppendFormat("{0} ", op);
                 GenerateSyntaxComponent(data.GetParam(1), sb, indent, false, paramsStart);
-            } else if (id == "execbinary") {
+            }
+            else if (id == "execbinary") {
                 string op = data.GetParamId(0);
                 GenerateSyntaxComponent(data.GetParam(1), sb, indent, false, paramsStart);
                 sb.AppendFormat(" {0} ", op);
                 GenerateSyntaxComponent(data.GetParam(2), sb, indent, false, paramsStart);
-            } else if (id == "getstatic") {
+            }
+            else if (id == "getstatic") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
                 sb.AppendFormat(".{0}", member.GetId());
-            } else if (id == "getinstance") {
+            }
+            else if (id == "getinstance") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
                 sb.AppendFormat(".{0}", member.GetId());
-            } else if (id == "setstatic") {
-                var obj = data.Params[0];
-                var member = data.Params[1];
-                var val = data.Params[2];
-                GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
-                sb.AppendFormat(".{0}", member.GetId());
-                sb.Append(" = ");
-                GenerateSyntaxComponent(val, sb, indent, false, paramsStart);
-            } else if (id == "setinstance") {
+            }
+            else if (id == "setstatic") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
                 var val = data.Params[2];
@@ -352,7 +365,17 @@ namespace Generator
                 sb.AppendFormat(".{0}", member.GetId());
                 sb.Append(" = ");
                 GenerateSyntaxComponent(val, sb, indent, false, paramsStart);
-            } else if (id == "callstatic") {
+            }
+            else if (id == "setinstance") {
+                var obj = data.Params[0];
+                var member = data.Params[1];
+                var val = data.Params[2];
+                GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
+                sb.AppendFormat(".{0}", member.GetId());
+                sb.Append(" = ");
+                GenerateSyntaxComponent(val, sb, indent, false, paramsStart);
+            }
+            else if (id == "callstatic") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
@@ -371,7 +394,8 @@ namespace Generator
                     prestr = ", ";
                 }
                 sb.Append(")");
-            } else if (id == "callinstance") {
+            }
+            else if (id == "callinstance") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
@@ -390,7 +414,8 @@ namespace Generator
                     prestr = ", ";
                 }
                 sb.Append(")");
-            } else if (id == "literaldictionary") {
+            }
+            else if (id == "literaldictionary") {
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -404,7 +429,8 @@ namespace Generator
                     prestr = ", ";
                 }
                 sb.Append("}");
-            } else if (id == "literallist" || id == "literalcollection") {
+            }
+            else if (id == "literallist" || id == "literalcollection") {
                 sb.Append("[");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -414,7 +440,8 @@ namespace Generator
                     prestr = ", ";
                 }
                 sb.Append("]");
-            } else if (id == "literalarray") {
+            }
+            else if (id == "literalarray") {
                 sb.Append("[");
                 string prestr = string.Empty;
                 for (int ix = 1; ix < data.Params.Count; ++ix) {
@@ -424,14 +451,18 @@ namespace Generator
                     prestr = ", ";
                 }
                 sb.Append("]");
-            } else if (id == "newarray") {
+            }
+            else if (id == "newarray") {
                 sb.Append("new Array()");
-            } else {
+            }
+            else {
                 if (null != callData) {
                     GenerateSyntaxComponent(callData, sb, indent, false, paramsStart);
-                } else if (id == "elseif") {
+                }
+                else if (id == "elseif") {
                     sb.Append("else if");
-                } else {
+                }
+                else {
                     sb.Append(id);
                 }
                 if (data.HaveParam()) {
@@ -489,18 +520,21 @@ namespace Generator
                     GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
                     sb.AppendLine();
                 }
-            } else if (id == "local") {
+            }
+            else if (id == "local") {
                 bool first = true;
                 foreach (var comp in data.Statements) {
                     if (!first) {
                         sb.AppendLine(";");
-                    } else {
+                    }
+                    else {
                         first = false;
                     }
                     sb.Append("var ");
                     GenerateSyntaxComponent(comp, sb, indent, false, paramsStart);
                 }
-            } else {
+            }
+            else {
                 GenerateConcreteSyntax(fcall, sb, indent, false, paramsStart);
                 if (data.HaveStatement()) {
                     sb.AppendLine("{");
@@ -510,7 +544,8 @@ namespace Generator
                         string subId = comp.GetId();
                         if (subId != "comments" && subId != "comment") {
                             sb.AppendLine(";");
-                        } else {
+                        }
+                        else {
                             sb.AppendLine();
                         }
                     }
@@ -535,13 +570,15 @@ namespace Generator
                         string subId = comp.GetId();
                         if (subId != "comments" && subId != "comment") {
                             sb.AppendLine(";");
-                        } else {
+                        }
+                        else {
                             sb.AppendLine();
                         }
                     }
                     --indent;
                     sb.AppendFormat("{0}}}", GetIndentString(indent));
-                } else {
+                }
+                else {
                     sb.Append(" ");
                 }
             }
