@@ -85,7 +85,9 @@
     <Compile Include="Info\InvocationInfo.cs" />
     <Compile Include="Info\MethodInfo.cs" />
     <Compile Include="Info\MiscInfo.cs" />
+    <Compile Include="Info\StringMatcher.cs" />
     <Compile Include="Info\SymbolTable.cs" />
+    <Compile Include="Info\TypeChecker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
