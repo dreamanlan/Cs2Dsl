@@ -49,8 +49,11 @@ namespace Generator
             int indent = 0;
             foreach (var dslInfo in dslFile.DslInfos) {
                 string id = dslInfo.GetId();
-                var funcData = dslInfo.First;
-                var callData = funcData.Call;
+                Dsl.CallData callData = dslInfo as Dsl.CallData;
+                Dsl.FunctionData funcData = dslInfo as Dsl.FunctionData;
+                if (null != funcData) {
+                    callData = funcData.Call;
+                }
                 if (id == "require") {
                     sb.AppendFormatLine("{0}require(\"{1}.js\");", GetIndentString(indent), callData.GetParamId(0).Replace("cs2dsl__", "cs2js__"));
                 }
