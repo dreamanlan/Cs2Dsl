@@ -348,37 +348,37 @@ namespace Generator
                 sb.AppendFormat(" {0} ", op);
                 GenerateSyntaxComponent(data.GetParam(2), sb, indent, false, paramsStart);
             }
-            else if (id == "getstatic") {
-                var obj = data.Params[0];
-                var member = data.Params[1];
+            else if (id == "getstatic" || id == "getexternstatic") {
+                var obj = data.Params[1];
+                var member = data.Params[2];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
                 sb.AppendFormat(".{0}", member.GetId());
             }
-            else if (id == "getinstance") {
-                var obj = data.Params[0];
-                var member = data.Params[1];
+            else if (id == "getinstance" || id == "getexterninstance") {
+                var obj = data.Params[1];
+                var member = data.Params[2];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
                 sb.AppendFormat(".{0}", member.GetId());
             }
-            else if (id == "setstatic") {
-                var obj = data.Params[0];
-                var member = data.Params[1];
-                var val = data.Params[2];
-                GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
-                sb.AppendFormat(".{0}", member.GetId());
-                sb.Append(" = ");
-                GenerateSyntaxComponent(val, sb, indent, false, paramsStart);
-            }
-            else if (id == "setinstance") {
-                var obj = data.Params[0];
-                var member = data.Params[1];
-                var val = data.Params[2];
+            else if (id == "setstatic" || id == "getexternstatic") {
+                var obj = data.Params[1];
+                var member = data.Params[2];
+                var val = data.Params[3];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
                 sb.AppendFormat(".{0}", member.GetId());
                 sb.Append(" = ");
                 GenerateSyntaxComponent(val, sb, indent, false, paramsStart);
             }
-            else if (id == "callstatic") {
+            else if (id == "setinstance" || id == "getexterninstance") {
+                var obj = data.Params[1];
+                var member = data.Params[2];
+                var val = data.Params[3];
+                GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
+                sb.AppendFormat(".{0}", member.GetId());
+                sb.Append(" = ");
+                GenerateSyntaxComponent(val, sb, indent, false, paramsStart);
+            }
+            else if (id == "callstatic" || id == "callexternstatic") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
@@ -398,7 +398,7 @@ namespace Generator
                 }
                 sb.Append(")");
             }
-            else if (id == "callinstance") {
+            else if (id == "callinstance" || id == "callexterninstance") {
                 var obj = data.Params[0];
                 var member = data.Params[1];
                 GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
@@ -433,7 +433,7 @@ namespace Generator
                 }
                 sb.Append("}");
             }
-            else if (id == "literallist" || id == "literalcollection") {
+            else if (id == "literallist" || id == "literalcollection" || id == "literalcomplex") {
                 sb.Append("[");
                 string prestr = string.Empty;
                 for (int ix = 0; ix < data.Params.Count; ++ix) {
@@ -536,6 +536,30 @@ namespace Generator
                     sb.Append("var ");
                     GenerateSyntaxComponent(comp, sb, indent, false, paramsStart);
                 }
+            }
+            else if (id == "execclosure") {
+                string localName = data.Call.GetParamId(0);
+                bool needDecl = (bool)Convert.ChangeType(data.Call.GetParamId(1), typeof(bool));
+                sb.AppendLine("(function(){ ");
+                if (data.HaveStatement()) {
+                    ++indent;
+                    if (needDecl) {
+                        sb.AppendFormatLine("{0}var {1};", GetIndentString(indent), localName);
+                    }
+                    foreach (var comp in data.Statements) {
+                        GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
+                        string subId = comp.GetId();
+                        if (subId != "comments" && subId != "comment") {
+                            sb.AppendLine(";");
+                        }
+                        else {
+                            sb.AppendLine();
+                        }
+                    }
+                    sb.AppendFormatLine("{0}return {1};", GetIndentString(indent), localName);
+                    --indent;
+                }
+                sb.AppendFormat("{0}}})()", GetIndentString(indent));
             }
             else {
                 GenerateConcreteSyntax(fcall, sb, indent, false, paramsStart);
