@@ -1,6 +1,7 @@
-require("cs2dsl__utility.js");
-require("cs2dsl__namespaces.js");
-require("cs2dsl__externenums.js");
+require("cs2js__lualib.js");
+require("cs2js__namespaces.js");
+require("cs2js__externenums.js");
+require("cs2js__interfaces.js");
 
 function Mandelbrot(){
 	this.Exec = function(){
@@ -55,21 +56,42 @@ function Mandelbrot(){
 		JsConsole.Print(x, y);
 	}
 	this.ctor = function(){
+		this.__ctor();
+	}
+	this.__ctor = function(){
+		if(this.__ctor_called){
+			return;
+		}else{
+			this.__ctor_called = true;
+		};
+		this.datas = [1, 2, 3, 4, 5, 6];
+		this.dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), {1 : 1, 2 : 2, 3 : 3, 4 : 4, 5 : 5}, "System.Collections.Generic.Dictionary_TKey_TValue:ctor");
+		this.dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), {}, "System.Collections.Generic.Dictionary_TKey_TValue:ctor__Int32", 128);
 	}
 	this.r = 10;
 	this.scale = 3.00;
-	this.datas = [1, 2, 3, 4, 5, 6];
-	this.dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, "System.Collections.Generic.Dictionary_TKey_TValue", "ctor", {1 : 1, 2 : 2, 3 : 3, 4 : 4, 5 : 5});
-	this.dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, "System.Collections.Generic.Dictionary_TKey_TValue", "ctor", {}, 128);
+	this.datas = null;
+	this.dicts = null;
+	this.dicts2 = null;
+	this.__ctor_called = false;
 }
 
 (function(){
 	Mandelbrot.__new_object = function(){
-		return newobject(Mandelbrot, null, null, getParams(0));
+		return newobject(Mandelbrot, typeargs(), typekinds(), "ctor", null, getParams(0));
 	}
 	Mandelbrot.Test = function(){
-		newobject(Mandelbrot, "ctor", null).Exec();
+		newobject(Mandelbrot, typeargs(), typekinds(), "ctor", null).Exec();
 	}
 	Mandelbrot.cctor = function(){
+		Mandelbrot.__cctor();
 	}
+	Mandelbrot.__cctor = function(){
+		if(Mandelbrot.__cctor_called){
+			return;
+		}else{
+			Mandelbrot.__cctor_called = true;
+		};
+	}
+	Mandelbrot.__cctor_called = false;
 })()

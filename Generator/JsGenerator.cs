@@ -29,9 +29,11 @@ namespace Generator
             var files = Directory.GetFiles(s_SrcPath, "*.dsl", SearchOption.TopDirectoryOnly);
             foreach (string file in files) {
                 try {
+                    string fileName = Path.GetFileNameWithoutExtension(file);
+
                     Dsl.DslFile dslFile = new Dsl.DslFile();
                     dslFile.Load(file, s => Log(file, s));
-                    GenerateJs(dslFile, Path.Combine(s_OutPath, Path.ChangeExtension(file.Replace("cs2dsl__", "cs2js__"), s_Ext)));
+                    GenerateJs(dslFile, Path.Combine(s_OutPath, Path.ChangeExtension(fileName.Replace("cs2dsl__", "cs2js__"), s_Ext)));
                 }
                 catch (Exception ex) {
                     Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
@@ -68,7 +70,7 @@ namespace Generator
 
                     sb.AppendFormatLine("{0}function {1}(){{", GetIndentString(indent), className);
                     ++indent;
-                    if (null != baseClass) {
+                    if (null != baseClass && baseClass.IsValid()) {
                         GenerateSyntaxComponent(baseClass, sb, indent, true, 0);
                         sb.AppendLine(".call(this);");
                         sb.AppendLine();
