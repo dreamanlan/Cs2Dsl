@@ -17,10 +17,86 @@
 					return v;
 			}
 			
-			System = defnamespace(typeof(System));
+			System = {};
+            System.Boolean = defnamespace(System.Boolean);
+            System.SByte = defnamespace(System.SByte);
+            System.Byte = defnamespace(System.Byte);
+            System.Char = defnamespace(System.Char);
+            System.Int16 = defnamespace(System.Int16);
+            System.Int32 = defnamespace(System.Int32);
+            System.Int64 = defnamespace(System.Int64);
+            System.UInt16 = defnamespace(System.UInt16);
+            System.UInt32 = defnamespace(System.UInt32);
+            System.UInt64 = defnamespace(System.UInt64);
+            System.Single = defnamespace(System.Single);
+            System.Double = defnamespace(System.Double);
+            System.String = defnamespace(System.String);
 			System.Collections = defnamespace(System.Collections);
 			System.Collections.Generic = defnamespace(System.Collections.Generic);
 			System.Collections.Generic.Dictionary_TKey_TValue = {};
+			
+			SymbolKind = {
+                Alias : 0,
+                ArrayType : 1,
+                Assembly : 2,
+                DynamicType : 3,
+                ErrorType : 4,
+                Event : 5,
+                Field : 6,
+                Label : 7,
+                Local : 8,
+                Method : 9,
+                NetModule : 10,
+                NamedType : 11,
+                Namespace : 12,
+                Parameter : 13,
+                PointerType : 14,
+                Property : 15,
+                RangeVariable : 16,
+                TypeParameter : 17,
+                Preprocessing : 18,
+                Discard : 19
+            };
+			
+			TypeKind = {
+                Unknown : 0,
+                Array : 1,
+                Class : 2,
+                Delegate : 3,
+                Dynamic : 4,
+                Enum : 5,
+                Error : 6,
+                Interface : 7,
+                Module : 8,
+                Pointer : 9,
+                Struct : 10,
+                Structure : 10,
+                TypeParameter : 11,
+                Submission : 12
+            };
+
+            MethodKind = {
+                AnonymousFunction : 0,
+                LambdaMethod : 0,
+                Constructor : 1,
+                Conversion : 2,
+                DelegateInvoke : 3,
+                Destructor : 4,
+                EventAdd : 5,
+                EventRaise : 6,
+                EventRemove : 7,
+                ExplicitInterfaceImplementation : 8,
+                UserDefinedOperator : 9,
+                Ordinary : 10,
+                PropertyGet : 11,
+                PropertySet : 12,
+                ReducedExtension : 13,
+                StaticConstructor : 14,
+                SharedConstructor : 14,
+                BuiltinOperator : 15,
+                DeclareMethod : 16,
+                LocalFunction : 17
+            };
 			
 			function condexp(cv, tfIsConst, tf, ffIsConst, ff){
 			}			
@@ -38,27 +114,24 @@
 			}			
 			function wrapchar(char, intVal){
 			}			
+			function wrapstruct(v, classObj, typeKind){			
+			}
+			function wrapexternstruct(v, classObj, typeKind){
+			}
 			function wrapdelegation(handlers){
 			}			
 			function wrapenumerable(func){
 			}			
 			function wrapyield(yieldVal, isEnumerableOrEnumerator, isUnityYield){
 			}			
-			function wrapparams(arr){	
-			}			
-			function paramsremove(arr){	
-			}			
-			function wraparray(arr){
-			}			
-			function wrapvaluetype(v){
-			}			
-			function wrapvaluetypearray(arr){
-			}			
-			function wrapexternvaluetype(v){
-			}			
-			function wrapexternvaluetypearray(arr){
-			}			
-			function newobject(classObj, ctor, initializer){
+			function wrapanonymousobject(dict){			
+			}
+			function wrapparams(arr, elementType, elementTypeKind){	
+			}
+			function wraparray(arr, size, classObj, typeKind){
+			    return arr;
+			}		
+			function newobject(classObj, typeargs, typekinds, ctor, initializer){
 				var args = getParams(3);
 				var obj = new classObj();
 				if(null != ctor){
@@ -66,21 +139,21 @@
 				}
 				return obj;
 			}			
-			function newexternobject(classObj, className, ctor, initializer){
+			function newexternobject(classObj, typeargs, typekinds, className, ctor, initializer){
 			}			
 			function newtypeparamobject(t){
 			}			
-			function newdictionary(t, ctor, dict){
+			function newdictionary(t, typeargs, typekinds, ctor, dict){
 			}			
-			function newlist(t, ctor, list){
+			function newlist(t, typeargs, typekinds, ctor, list){
 			}			
-			function newcollection(t, ctor, coll){
+			function newcollection(t, typeargs, typekinds, ctor, coll){
 			}			
-			function newexterndictionary(t, className, ctor, dict){
+			function newexterndictionary(t, typeargs, typekinds, className, ctor, dict){
 			}			
-			function newexternlist(t, className, ctor, list){
+			function newexternlist(t, typeargs, typekinds, className, ctor, list){
 			}			
-			function newexterncollection(t, className, ctor, coll){
+			function newexterncollection(t, typeargs, typekinds, className, ctor, coll){
 			}
 			function setdelegationkey(func, key, obj, member){
 			}
@@ -99,42 +172,18 @@
 			function externdelegationadd(isevent, isstatic, key, t, intf, k, handler){
 			}			
 			function externdelegationremove(isevent, isstatic, key, t, intf, k, handler){
-			}			
-			function getstaticindexer(classObj, name){
+			}		
+			function getexternstaticindexer(callerClass, typeargs, typekinds, classObj, name, argCount){
 			}
-			function getinstanceindexer(obj, intf, name){
+			function getexterninstanceindexer(callerClass, typeargs, typekinds, obj, intf, classObj, name, argCount){
 			}
-			function setstaticindexer(classObj, name){
+			function setexternstaticindexer(callerClass, typeargs, typekinds, classObj, name, argCount, toplevel){
 			}
-			function setinstanceindexer(obj, intf, name){
-			}			
-			function getexternstaticindexer(classObj, name){
+			function setexterninstanceindexer(callerClass, typeargs, typekinds, obj, intf, classObj, name, argCount, toplevel){
 			}
-			function getexterninstanceindexer(obj, intf, name){
+			function invokeoperator(rettype, classObj, method){
 			}
-			function setexternstaticindexer(classObj, name){
-			}
-			function setexterninstanceindexer(obj, intf, name){
-			}			
-			function getstaticelement(classObj, name){
-			}
-			function getinstanceelement(obj, name){
-			}
-			function setstaticelement(classObj, name){
-			}
-			function setinstanceelement(obj, name){
-			}			
-			function getexternstaticelement(classObj, name){
-			}
-			function getexterninstanceelement(obj, name){
-			}
-			function setexternstaticelement(classObj, name){
-			}
-			function setexterninstanceelement(obj, name){
-			}			
-			function invokeoperator(classObj, method){
-			}
-			function invokeexternoperator(classObj, method){
+			function invokeexternoperator(rettype, classObj, method){
 			}
 			function execunary(op, opd, type, typeKind, isCs2Lua){
 			}
@@ -154,8 +203,25 @@
 			}			
 			function invokearraystaticmethod(firstArray, secondArray, method){
 			}			
+			function invokeintegeroperator(op, jsop, opd1, opd2, type1, type2){			
+			}
 			function getiterator(exp){
 			}
+			function dsltry(func)
+			{
+				func();
+				return [ret, err];
+			};
+			function dslcatch(handled, ret, err, func)
+			{
+				if(!handled && !ret){
+					handled = func(handled, {Message:err, StackTrace:""});
+				};
+				return handled;
+			};
+			function dslthrow(obj)
+			{
+			};
 			
 			function JsConsole(){
 			}

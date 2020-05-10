@@ -36,7 +36,15 @@ namespace Generator
                     GenerateJs(dslFile, Path.Combine(s_OutPath, Path.ChangeExtension(fileName.Replace("cs2dsl__", "cs2js__"), s_Ext)));
                 }
                 catch (Exception ex) {
-                    Log(file, string.Format("exception:{0}\n{1}", ex.Message, ex.StackTrace));
+                    string id = string.Empty;
+                    int line = 0;
+                    if (null != s_CurSyntax) {
+                        id = s_CurSyntax.GetId();
+                        if (null == id)
+                            id = string.Empty;
+                        line = s_CurSyntax.GetLine();
+                    }
+                    Log(file, string.Format("[{0}:{1}]:exception:{2}\n{3}", id, line, ex.Message, ex.StackTrace));
                     File.WriteAllText(Path.Combine(s_LogPath, "Generator.log"), s_LogBuilder.ToString());
                     System.Environment.Exit(-1);
                 }
@@ -216,6 +224,7 @@ namespace Generator
         }
         private static void GenerateSyntaxComponent(Dsl.ISyntaxComponent comp, StringBuilder sb, int indent, bool firstLineUseIndent, int paramsStart)
         {
+            s_CurSyntax = comp;
             var valData = comp as Dsl.ValueData;
             if (null != valData) {
                 GenerateConcreteSyntax(valData, sb, indent, firstLineUseIndent, paramsStart);
@@ -239,6 +248,7 @@ namespace Generator
         }
         private static void GenerateConcreteSyntax(Dsl.ValueData data, StringBuilder sb, int indent, bool firstLineUseIndent, int paramsStart)
         {
+            s_CurSyntax = data;
             if (firstLineUseIndent) {
                 sb.AppendFormat("{0}", GetIndentString(indent));
             }
@@ -256,6 +266,7 @@ namespace Generator
         }
         private static void GenerateConcreteSyntax(Dsl.CallData data, StringBuilder sb, int indent, bool firstLineUseIndent, int paramsStart)
         {
+            s_CurSyntax = data;
             string id = string.Empty;
             var callData = data.Call;
             if (null == callData) {
@@ -420,10 +431,30 @@ namespace Generator
                 }
                 sb.Append(")");
             }
+            else if (id == "typeargs") {
+                if (data.GetParamNum() > 0) {
+                    sb.Append("[");
+                    GenerateArguments(data, sb, indent, 0);
+                    sb.Append("]");
+                }
+                else {
+                    sb.Append("null");
+                }
+            }
+            else if (id == "typekinds") {
+                if (data.GetParamNum() > 0) {
+                    sb.Append("[");
+                    GenerateArguments(data, sb, indent, 0);
+                    sb.Append("]");
+                }
+                else {
+                    sb.Append("null");
+                }
+            }
             else if (id == "literaldictionary") {
                 sb.Append("{");
                 string prestr = string.Empty;
-                for (int ix = 0; ix < data.Params.Count; ++ix) {
+                for (int ix = 2; ix < data.Params.Count; ++ix) {
                     var param = data.Params[ix] as Dsl.CallData;
                     sb.Append(prestr);
                     var k = param.GetParam(0);
@@ -438,7 +469,7 @@ namespace Generator
             else if (id == "literallist" || id == "literalcollection" || id == "literalcomplex") {
                 sb.Append("[");
                 string prestr = string.Empty;
-                for (int ix = 0; ix < data.Params.Count; ++ix) {
+                for (int ix = 2; ix < data.Params.Count; ++ix) {
                     var param = data.Params[ix];
                     sb.Append(prestr);
                     GenerateSyntaxComponent(param, sb, indent, false, paramsStart);
@@ -449,7 +480,7 @@ namespace Generator
             else if (id == "literalarray") {
                 sb.Append("[");
                 string prestr = string.Empty;
-                for (int ix = 1; ix < data.Params.Count; ++ix) {
+                for (int ix = 2; ix < data.Params.Count; ++ix) {
                     var param = data.Params[ix];
                     sb.Append(prestr);
                     GenerateSyntaxComponent(param, sb, indent, false, paramsStart);
@@ -458,7 +489,15 @@ namespace Generator
                 sb.Append("]");
             }
             else if (id == "newarray") {
-                sb.Append("new Array()");
+                var typeStr = CalcTypeString(data.GetParam(0));
+                var typeKind = CalcTypeString(data.GetParam(1));
+                if (data.GetParamNum() > 2) {
+                    var vname = data.GetParamId(2);
+                    sb.AppendFormat("wraparray([], {0}, {1}, {2})", vname, typeStr, typeKind);
+                }
+                else {
+                    sb.AppendFormat("wraparray([], nil, {0}, {1})", typeStr, typeKind);
+                }
             }
             else {
                 if (null != callData) {
@@ -511,6 +550,7 @@ namespace Generator
         }
         private static void GenerateConcreteSyntax(Dsl.FunctionData data, StringBuilder sb, int indent, bool firstLineUseIndent, int paramsStart)
         {
+            s_CurSyntax = data;
             if (firstLineUseIndent) {
                 sb.AppendFormat("{0}", GetIndentString(indent));
             }
@@ -612,6 +652,66 @@ namespace Generator
                 }
             }
         }
+        private static void GenerateArguments(Dsl.CallData data, StringBuilder sb, int indent, int start)
+        {
+            s_CurSyntax = data;
+            GenerateArguments(data, sb, indent, start, string.Empty);
+        }
+        private static void GenerateArguments(Dsl.CallData data, StringBuilder sb, int indent, int start, string sig)
+        {
+            s_CurSyntax = data;
+            string prestr = string.Empty;
+            if (!string.IsNullOrEmpty(sig)) {
+                sb.Append(prestr);
+                sb.AppendFormat("\"{0}\"", Escape(sig));
+                prestr = ", ";
+            }
+            for (int ix = start; ix < data.Params.Count; ++ix) {
+                var param = data.Params[ix];
+                sb.Append(prestr);
+                string paramId = param.GetId();
+                if (param.GetIdType() == (int)Dsl.ValueData.ID_TOKEN && paramId == "...") {
+                    sb.Append("...");
+                    continue;
+                }
+                GenerateSyntaxComponent(param, sb, indent, false, 0);
+                prestr = ", ";
+            }
+        }
+        private static string CalcTypesString(Dsl.CallData cd)
+        {
+            StringBuilder sb = new StringBuilder();
+            string prestr = string.Empty;
+            foreach (var p in cd.Params) {
+                var str = CalcTypeString(p);
+                sb.Append(prestr);
+                sb.Append(str);
+                prestr = ":";
+            }
+            return sb.ToString();
+        }
+        private static string CalcTypeString(Dsl.ISyntaxComponent comp)
+        {
+            string ret = comp.GetId();
+            var cd = comp as Dsl.CallData;
+            if (null != cd && cd.GetParamClass() == (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PERIOD) {
+                string prefix;
+                if (cd.IsHighOrder) {
+                    prefix = CalcTypeString(cd.Call);
+                }
+                else {
+                    prefix = cd.GetId();
+                }
+                ret = prefix + "." + cd.GetParamId(0);
+            }
+            return ret;
+        }
+        private static string CalcExpressionString(Dsl.ISyntaxComponent comp)
+        {
+            StringBuilder sb = new StringBuilder();
+            GenerateSyntaxComponent(comp, sb, 0, false, 0);
+            return sb.ToString();
+        }
         private static Dsl.ISyntaxComponent FindParam(Dsl.FunctionData funcData, string key)
         {
             foreach (var statement in funcData.Call.Params) {
@@ -630,6 +730,14 @@ namespace Generator
             }
             return null;
         }
+        private static string GetLastName(string fullName)
+        {
+            int ix = fullName.LastIndexOf('.');
+            if (ix < 0)
+                return fullName;
+            else
+                return fullName.Substring(ix + 1);
+        }
         private static void Log(string file, string msg)
         {
             s_LogBuilder.AppendFormatLine("[{0}]:{1}", file, msg);
@@ -642,9 +750,6 @@ namespace Generator
         private static string Escape(string src)
         {
             StringBuilder sb = new StringBuilder();
-            //dsl语言只显示处理'\0'、"\xhh"、"\ooo"转义，其它都以实际字符保存在源代码中，以下4个特殊的控制字符无法在源代码中保存，cs2dsl会保存成'\\字符'的形式，之后使用dsl读入时，字符串中将以'\字符'的形式存在
-            //转义时要对此进行特殊处理
-            src = src.Replace("\\a", "\a").Replace("\\b", "\b").Replace("\\f", "\f").Replace("\\v", "\v");
             for (int i = 0; i < src.Length; ++i) {
                 char c = src[i];
                 string es = Escape(c);
@@ -682,6 +787,7 @@ namespace Generator
             }
         }
 
+        private static Dsl.ISyntaxComponent s_CurSyntax = null;
         private static string s_ExePath = string.Empty;
         private static string s_SrcPath = string.Empty;
         private static string s_LogPath = string.Empty;

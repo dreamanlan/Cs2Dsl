@@ -73,9 +73,9 @@ class(Mandelbrot) {
 			}else{
 				setinstance(SymbolKind.Field, this, "__ctor_called", true);
 			};
-			this.datas = literalarray(System.Int32, 1, 2, 3, 4, 5, 6);
-			this.dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), literaldictionary(1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5), "System.Collections.Generic.Dictionary_TKey_TValue:ctor");
-			this.dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), literaldictionary(), "System.Collections.Generic.Dictionary_TKey_TValue:ctor__Int32", 128);
+			this.datas = literalarray(System.Int32, TypeKind.Struct, 1, 2, 3, 4, 5, 6);
+			this.dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), literaldictionary(typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), 1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5), "System.Collections.Generic.Dictionary_TKey_TValue:ctor");
+			this.dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), literaldictionary(typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct)), "System.Collections.Generic.Dictionary_TKey_TValue:ctor__Int32", 128);
 		};
 	};
 	instance_fields {

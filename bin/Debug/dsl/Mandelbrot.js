@@ -65,8 +65,8 @@ function Mandelbrot(){
 			this.__ctor_called = true;
 		};
 		this.datas = [1, 2, 3, 4, 5, 6];
-		this.dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), {1 : 1, 2 : 2, 3 : 3, 4 : 4, 5 : 5}, "System.Collections.Generic.Dictionary_TKey_TValue:ctor");
-		this.dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, typeargs(System.Int32, System.Int32), typekinds(TypeKind.Struct, TypeKind.Struct), {}, "System.Collections.Generic.Dictionary_TKey_TValue:ctor__Int32", 128);
+		this.dicts = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, [System.Int32, System.Int32], [TypeKind.Struct, TypeKind.Struct], {1 : 1, 2 : 2, 3 : 3, 4 : 4, 5 : 5}, "System.Collections.Generic.Dictionary_TKey_TValue:ctor");
+		this.dicts2 = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, [System.Int32, System.Int32], [TypeKind.Struct, TypeKind.Struct], {}, "System.Collections.Generic.Dictionary_TKey_TValue:ctor__Int32", 128);
 	}
 	this.r = 10;
 	this.scale = 3.00;
@@ -78,10 +78,10 @@ function Mandelbrot(){
 
 (function(){
 	Mandelbrot.__new_object = function(){
-		return newobject(Mandelbrot, typeargs(), typekinds(), "ctor", null, getParams(0));
+		return newobject(Mandelbrot, null, null, "ctor", null, getParams(0));
 	}
 	Mandelbrot.Test = function(){
-		newobject(Mandelbrot, typeargs(), typekinds(), "ctor", null).Exec();
+		newobject(Mandelbrot, null, null, "ctor", null).Exec();
 	}
 	Mandelbrot.cctor = function(){
 		Mandelbrot.__cctor();
