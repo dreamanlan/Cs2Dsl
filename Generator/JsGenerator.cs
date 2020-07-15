@@ -59,10 +59,10 @@ namespace Generator
             int indent = 0;
             foreach (var dslInfo in dslFile.DslInfos) {
                 string id = dslInfo.GetId();
-                Dsl.CallData callData = dslInfo as Dsl.CallData;
                 Dsl.FunctionData funcData = dslInfo as Dsl.FunctionData;
-                if (null != funcData) {
-                    callData = funcData.Call;
+                Dsl.FunctionData callData = funcData;
+                if (null != funcData && funcData.IsHighOrder) {
+                    callData = funcData.LowerOrderFunction;
                 }
                 if (id == "require") {
                     sb.AppendFormatLine("{0}require(\"{1}.js\");", GetIndentString(indent), callData.GetParamId(0).Replace("cs2dsl__", "cs2js__"));
@@ -85,13 +85,13 @@ namespace Generator
                     }
                     var instMethods = FindStatement(funcData, "instance_methods") as Dsl.FunctionData;
                     if (null != instMethods) {
-                        foreach (var def in instMethods.Statements) {
-                            var mdef = def as Dsl.CallData;
+                        foreach (var def in instMethods.Params) {
+                            var mdef = def as Dsl.FunctionData;
                             if (mdef.GetId() == "=") {
                                 string mname = mdef.GetParamId(0);
                                 var fdef = mdef.GetParam(1) as Dsl.FunctionData;
                                 if (null != fdef) {
-                                    var fcall = fdef.Call;
+                                    var fcall = fdef.LowerOrderOrThisCall;
                                     int paramsStart = 0;
                                     sb.AppendFormat("{0}this.{1} = {2}(", GetIndentString(indent), mname, fcall.GetId());
                                     prestr = string.Empty;
@@ -109,7 +109,7 @@ namespace Generator
                                             sb.Append(paramId);
                                         }
                                         else {
-                                            var pc = param as Dsl.CallData;
+                                            var pc = param as Dsl.FunctionData;
                                             if (null != pc) {
                                                 sb.Append(pc.GetParamId(0));
                                             }
@@ -117,7 +117,7 @@ namespace Generator
                                     }
                                     sb.AppendLine("){");
                                     ++indent;
-                                    foreach (var comp in fdef.Statements) {
+                                    foreach (var comp in fdef.Params) {
                                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
                                         string subId = comp.GetId();
                                         if (subId != "comments" && subId != "comment") {
@@ -135,8 +135,8 @@ namespace Generator
                     }
                     var instFields = FindStatement(funcData, "instance_fields") as Dsl.FunctionData;
                     if (null != instFields) {
-                        foreach (var def in instFields.Statements) {
-                            var mdef = def as Dsl.CallData;
+                        foreach (var def in instFields.Params) {
+                            var mdef = def as Dsl.FunctionData;
                             if (mdef.GetId() == "=") {
                                 string mname = mdef.GetParamId(0);
                                 var comp = mdef.GetParam(1);
@@ -155,14 +155,14 @@ namespace Generator
                     ++indent;
                     var staticMethods = FindStatement(funcData, "static_methods") as Dsl.FunctionData;
                     if (null != staticMethods) {
-                        foreach (var def in staticMethods.Statements) {
-                            var mdef = def as Dsl.CallData;
+                        foreach (var def in staticMethods.Params) {
+                            var mdef = def as Dsl.FunctionData;
                             if (mdef.GetId() == "=") {
                                 string mname = mdef.GetParamId(0);
                                 var fdef = mdef.GetParam(1) as Dsl.FunctionData;
                                 if (null != fdef) {
                                     int paramsStart = 0;
-                                    var fcall = fdef.Call;
+                                    var fcall = fdef.LowerOrderOrThisCall;
                                     sb.AppendFormat("{0}{1}.{2} = {3}(", GetIndentString(indent), className, mname, fcall.GetId());
                                     prestr = string.Empty;
                                     for (int ix = 0; ix < fcall.Params.Count; ++ix) {
@@ -179,7 +179,7 @@ namespace Generator
                                             sb.Append(pv.GetId());
                                         }
                                         else {
-                                            var pc = param as Dsl.CallData;
+                                            var pc = param as Dsl.FunctionData;
                                             if (null != pc) {
                                                 sb.Append(pc.GetParamId(0));
                                             }
@@ -187,7 +187,7 @@ namespace Generator
                                     }
                                     sb.AppendLine("){");
                                     ++indent;
-                                    foreach (var comp in fdef.Statements) {
+                                    foreach (var comp in fdef.Params) {
                                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
                                         string subId = comp.GetId();
                                         if (subId != "comments" && subId != "comment") {
@@ -205,8 +205,8 @@ namespace Generator
                     }
                     var staticFields = FindStatement(funcData, "static_fields") as Dsl.FunctionData;
                     if (null != staticFields) {
-                        foreach (var def in staticFields.Statements) {
-                            var mdef = def as Dsl.CallData;
+                        foreach (var def in staticFields.Params) {
+                            var mdef = def as Dsl.FunctionData;
                             if (mdef.GetId() == "=") {
                                 string mname = mdef.GetParamId(0);
                                 var comp = mdef.GetParam(1);
@@ -230,19 +230,13 @@ namespace Generator
                 GenerateConcreteSyntax(valData, sb, indent, firstLineUseIndent, paramsStart);
             }
             else {
-                var callData = comp as Dsl.CallData;
-                if (null != callData) {
-                    GenerateConcreteSyntax(callData, sb, indent, firstLineUseIndent, paramsStart);
+                var funcData = comp as Dsl.FunctionData;
+                if (null != funcData) {
+                    GenerateConcreteSyntax(funcData, sb, indent, firstLineUseIndent, paramsStart);
                 }
                 else {
-                    var funcData = comp as Dsl.FunctionData;
-                    if (null != funcData) {
-                        GenerateConcreteSyntax(funcData, sb, indent, firstLineUseIndent, paramsStart);
-                    }
-                    else {
-                        var statementData = comp as Dsl.StatementData;
-                        GenerateConcreteSyntax(statementData, sb, indent, firstLineUseIndent, paramsStart);
-                    }
+                    var statementData = comp as Dsl.StatementData;
+                    GenerateConcreteSyntax(statementData, sb, indent, firstLineUseIndent, paramsStart);
                 }
             }
         }
@@ -264,18 +258,21 @@ namespace Generator
                     break;
             }
         }
-        private static void GenerateConcreteSyntax(Dsl.CallData data, StringBuilder sb, int indent, bool firstLineUseIndent, int paramsStart)
+        private static void GenerateConcreteSyntaxForCall(Dsl.FunctionData data, StringBuilder sb, int indent, bool firstLineUseIndent, int paramsStart)
         {
             s_CurSyntax = data;
+            Dsl.FunctionData callData = null;
             string id = string.Empty;
-            var callData = data.Call;
-            if (null == callData) {
+            if (data.IsHighOrder) {
+                callData = data.LowerOrderFunction;
+            }
+            else {
                 id = data.GetId();
             }
             if (firstLineUseIndent) {
                 sb.AppendFormat("{0}", GetIndentString(indent));
             }
-            if (data.GetParamClass() == (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_OPERATOR) {
+            if (data.GetParamClass() == (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_OPERATOR) {
                 int paramNum = data.GetParamNum();
                 if (paramNum == 1) {
                     var param1 = data.GetParam(0);
@@ -288,7 +285,7 @@ namespace Generator
                     var param2 = data.GetParam(1);
                     bool handled = false;
                     if (id == "=" && param1.GetId() == "multiassign") {
-                        var cd = param1 as Dsl.CallData;
+                        var cd = param1 as Dsl.FunctionData;
                         if (null != cd) {
                             if (cd.GetParamNum() > 1) {
                                 string varName = string.Format("__multiassign_{0}", data.GetLine());
@@ -455,7 +452,7 @@ namespace Generator
                 sb.Append("{");
                 string prestr = string.Empty;
                 for (int ix = 2; ix < data.Params.Count; ++ix) {
-                    var param = data.Params[ix] as Dsl.CallData;
+                    var param = data.Params[ix] as Dsl.FunctionData;
                     sb.Append(prestr);
                     var k = param.GetParam(0);
                     var v = param.GetParam(1);
@@ -511,17 +508,17 @@ namespace Generator
                 }
                 if (data.HaveParam()) {
                     switch (data.GetParamClass()) {
-                        case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PARENTHESIS:
+                        case (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_PARENTHESIS:
                             sb.Append("(");
                             break;
-                        case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_BRACKET:
+                        case (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_BRACKET:
                             sb.Append("[");
                             break;
-                        case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PERIOD:
+                        case (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_PERIOD:
                             sb.AppendFormat(".{0}", data.GetParamId(0));
                             break;
                     }
-                    if (data.GetParamClass() != (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PERIOD) {
+                    if (data.GetParamClass() != (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_PERIOD) {
                         string prestr = string.Empty;
                         for (int ix = 0; ix < data.Params.Count; ++ix) {
                             var param = data.Params[ix];
@@ -536,13 +533,13 @@ namespace Generator
                         }
                     }
                     switch (data.GetParamClass()) {
-                        case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PARENTHESIS:
+                        case (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_PARENTHESIS:
                             sb.Append(")");
                             break;
-                        case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_BRACKET:
+                        case (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_BRACKET:
                             sb.Append("]");
                             break;
-                        case (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PERIOD:
+                        case (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_PERIOD:
                             break;
                     }
                 }
@@ -550,25 +547,31 @@ namespace Generator
         }
         private static void GenerateConcreteSyntax(Dsl.FunctionData data, StringBuilder sb, int indent, bool firstLineUseIndent, int paramsStart)
         {
+            if(!data.IsHighOrder && data.HaveParam()) {
+                GenerateConcreteSyntaxForCall(data, sb, indent, firstLineUseIndent, paramsStart);
+                return;
+            }
             s_CurSyntax = data;
             if (firstLineUseIndent) {
                 sb.AppendFormat("{0}", GetIndentString(indent));
             }
-            var fcall = data.Call;
+            var fcall = data.LowerOrderFunction;
             string id = string.Empty;
-            var callData = fcall.Call;
+            Dsl.FunctionData callData = null;
+            if (fcall.IsHighOrder)
+                callData = fcall.LowerOrderFunction;
             if (null == callData) {
                 id = fcall.GetId();
             }
             if (id == "comments") {
-                foreach (var comp in data.Statements) {
+                foreach (var comp in data.Params) {
                     GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
                     sb.AppendLine();
                 }
             }
             else if (id == "local") {
                 bool first = true;
-                foreach (var comp in data.Statements) {
+                foreach (var comp in data.Params) {
                     if (!first) {
                         sb.AppendLine(";");
                     }
@@ -580,15 +583,15 @@ namespace Generator
                 }
             }
             else if (id == "execclosure") {
-                string localName = data.Call.GetParamId(0);
-                bool needDecl = (bool)Convert.ChangeType(data.Call.GetParamId(1), typeof(bool));
+                string localName = data.GetParamId(0);
+                bool needDecl = (bool)Convert.ChangeType(data.GetParamId(1), typeof(bool));
                 sb.AppendLine("(function(){ ");
                 if (data.HaveStatement()) {
                     ++indent;
                     if (needDecl) {
                         sb.AppendFormatLine("{0}var {1};", GetIndentString(indent), localName);
                     }
-                    foreach (var comp in data.Statements) {
+                    foreach (var comp in data.Params) {
                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
                         string subId = comp.GetId();
                         if (subId != "comments" && subId != "comment") {
@@ -604,11 +607,11 @@ namespace Generator
                 sb.AppendFormat("{0}}})()", GetIndentString(indent));
             }
             else {
-                GenerateConcreteSyntax(fcall, sb, indent, false, paramsStart);
+                GenerateConcreteSyntaxForCall(fcall, sb, indent, false, paramsStart);
                 if (data.HaveStatement()) {
                     sb.AppendLine("{");
                     ++indent;
-                    foreach (var comp in data.Statements) {
+                    foreach (var comp in data.Params) {
                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
                         string subId = comp.GetId();
                         if (subId != "comments" && subId != "comment") {
@@ -629,12 +632,12 @@ namespace Generator
                 sb.AppendFormat("{0}", GetIndentString(indent));
             }
             foreach (var funcData in data.Functions) {
-                var fcall = funcData.Call;
-                GenerateConcreteSyntax(fcall, sb, indent, false, paramsStart);
+                var fcall = funcData.LowerOrderOrThisCall;
+                GenerateConcreteSyntaxForCall(fcall, sb, indent, false, paramsStart);
                 if (funcData.HaveStatement()) {
                     sb.AppendLine("{");
                     ++indent;
-                    foreach (var comp in funcData.Statements) {
+                    foreach (var comp in funcData.Params) {
                         GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
                         string subId = comp.GetId();
                         if (subId != "comments" && subId != "comment") {
@@ -652,12 +655,12 @@ namespace Generator
                 }
             }
         }
-        private static void GenerateArguments(Dsl.CallData data, StringBuilder sb, int indent, int start)
+        private static void GenerateArguments(Dsl.FunctionData data, StringBuilder sb, int indent, int start)
         {
             s_CurSyntax = data;
             GenerateArguments(data, sb, indent, start, string.Empty);
         }
-        private static void GenerateArguments(Dsl.CallData data, StringBuilder sb, int indent, int start, string sig)
+        private static void GenerateArguments(Dsl.FunctionData data, StringBuilder sb, int indent, int start, string sig)
         {
             s_CurSyntax = data;
             string prestr = string.Empty;
@@ -678,7 +681,7 @@ namespace Generator
                 prestr = ", ";
             }
         }
-        private static string CalcTypesString(Dsl.CallData cd)
+        private static string CalcTypesString(Dsl.FunctionData cd)
         {
             StringBuilder sb = new StringBuilder();
             string prestr = string.Empty;
@@ -693,11 +696,11 @@ namespace Generator
         private static string CalcTypeString(Dsl.ISyntaxComponent comp)
         {
             string ret = comp.GetId();
-            var cd = comp as Dsl.CallData;
-            if (null != cd && cd.GetParamClass() == (int)Dsl.CallData.ParamClassEnum.PARAM_CLASS_PERIOD) {
+            var cd = comp as Dsl.FunctionData;
+            if (null != cd && cd.GetParamClass() == (int)Dsl.FunctionData.ParamClassEnum.PARAM_CLASS_PERIOD) {
                 string prefix;
                 if (cd.IsHighOrder) {
-                    prefix = CalcTypeString(cd.Call);
+                    prefix = CalcTypeString(cd.LowerOrderFunction);
                 }
                 else {
                     prefix = cd.GetId();
@@ -714,7 +717,10 @@ namespace Generator
         }
         private static Dsl.ISyntaxComponent FindParam(Dsl.FunctionData funcData, string key)
         {
-            foreach (var statement in funcData.Call.Params) {
+            var fcd = funcData;
+            if (funcData.IsHighOrder)
+                fcd = funcData;
+            foreach (var statement in fcd.Params) {
                 if (key == statement.GetId()) {
                     return statement;
                 }
@@ -723,7 +729,7 @@ namespace Generator
         }
         private static Dsl.ISyntaxComponent FindStatement(Dsl.FunctionData funcData, string key)
         {
-            foreach (var statement in funcData.Statements) {
+            foreach (var statement in funcData.Params) {
                 if (key == statement.GetId()) {
                     return statement;
                 }
