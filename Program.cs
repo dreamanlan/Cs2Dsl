@@ -243,16 +243,20 @@ namespace RoslynTool
                     SymbolTable.ArrayLowerBoundIsOne = false;
                 }
                 if (File.Exists(file)) {
-                    var stopwatch = Stopwatch.StartNew();
+                    var stopwatch1 = Stopwatch.StartNew();
                     var result = (int)CsToDslProcessor.Process(file, macros, undefMacros, ignoredPath, externPath, internPath, refByNames, refByPaths, enableInherit, enableLinq, outputResult, parallel);
-                    stopwatch.Stop();
-                    Console.WriteLine("RunningTime: {0}s", stopwatch.Elapsed.TotalSeconds);
+                    stopwatch1.Stop();
+                    Console.WriteLine("CsToDsl consume time: {0}s", stopwatch1.Elapsed.TotalSeconds);
+                    var stopwatch2 = Stopwatch.StartNew();
                     if (genLua) {
-                        Generator.LuaGenerator.Generate(Path.GetDirectoryName(file), outputDir, outputExt);
+                        Generator.LuaGenerator.Generate(Path.GetDirectoryName(file), outputDir, outputExt, parallel);
                     }
                     else {
-                        Generator.JsGenerator.Generate(Path.GetDirectoryName(file), outputDir, outputExt);
+                        Generator.JsGenerator.Generate(Path.GetDirectoryName(file), outputDir, outputExt, parallel);
                     }
+					stopwatch2.Stop();
+                    Console.WriteLine("Generator consume time: {0}s", stopwatch2.Elapsed.TotalSeconds);
+                    System.Threading.Thread.Sleep(1000);
                     Environment.Exit(result);
                 }
                 else {

@@ -9,7 +9,7 @@ namespace Generator
 {
     internal class JsGenerator
     {
-        internal static void Generate(string csprojPath, string outPath, string ext)
+        internal static void Generate(string csprojPath, string outPath, string ext, bool parallel)
         {
             if (string.IsNullOrEmpty(outPath)) {
                 outPath = Path.Combine(csprojPath, "dsl");
@@ -27,7 +27,7 @@ namespace Generator
                 Directory.CreateDirectory(s_OutPath);
             }
             var files = Directory.GetFiles(s_SrcPath, "*.dsl", SearchOption.TopDirectoryOnly);
-            foreach (string file in files) {
+            Action<string> handler = (file) => {
                 try {
                     string fileName = Path.GetFileNameWithoutExtension(file);
 
@@ -47,6 +47,14 @@ namespace Generator
                     Log(file, string.Format("[{0}:{1}]:exception:{2}\n{3}", id, line, ex.Message, ex.StackTrace));
                     File.WriteAllText(Path.Combine(s_LogPath, "Generator.log"), s_LogBuilder.ToString());
                     System.Environment.Exit(-1);
+                }
+            };
+            if (parallel) {
+                Parallel.ForEach(files, handler);
+            }
+            else {
+                foreach (var file in files) {
+                    handler(file);
                 }
             }
             File.WriteAllText(Path.Combine(s_LogPath, "Generator.log"), s_LogBuilder.ToString());
