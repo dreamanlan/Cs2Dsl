@@ -85,7 +85,7 @@ class TestUnity : MonoBehaviour
         {
           LuaConsole.Print("test");
         }
-                
+
         Dictionary<int, int> v1s = new Dictionary<int, int> { { 1, 2 }, { 3, 4 }, { 5, 6 } };
         Dictionary<int, int> v2s = new Dictionary<int, int> { { 1, 3 }, { 5, 4 } };
         var v0 = from v1 in v1s let v3 = v1.Value let v4 = v3.ToString().Split(' ') from vvvv in (from v2 in v2s select v2) where !string.IsNullOrEmpty(v1.ToString()) select v1.ToString();
@@ -307,6 +307,11 @@ namespace TopLevel
                     T v2 = (T)(object)g;
                     Foo f = new Foo();
                     f.Test3();
+                    ++f;
+                    f++;
+                    --f;
+                    f--;
+                    int i = (++f).m_Test + (f++).m_Test + (--f).m_Test + (f--).m_Test;
                 }
                 public void Test2<GG>(T t, TT tt)
                 {
@@ -422,6 +427,11 @@ namespace TopLevel
             public Foo(int a, int b)
             {}
 
+            public static Foo operator ++(Foo self)
+            {
+                self.m_Test += 1;
+                return self;
+            }
             public static Foo operator + (Foo self, Foo other)
             {
                 self.m_Test += other.m_Test;
@@ -474,6 +484,27 @@ namespace TopLevel
 
                 int v;
                 int vv=TestLocal(out v);
+                if(TestLocal(out v) < 1) {
+
+                }
+                if(TestLocal2(out v)) {
+
+                }
+                if (!TestLocal2(out v)) {
+
+                }
+                else if(TestLocal2(out v)) {
+
+                }
+                else {
+
+                }
+                while(TestLocal2(out v)) {
+
+                }
+                do {
+
+                } while (!TestLocal2(out v));
 
                 TestStruct ts = new TestStruct();
                 ts.A=1;
@@ -500,6 +531,10 @@ namespace TopLevel
                 ir.Test();
                 v = 1;
                 return 2;
+            }
+            private bool TestLocal2(out int v)
+            {
+                return false;
             }
             private int TestValueArg(TestStruct ts)
             {
