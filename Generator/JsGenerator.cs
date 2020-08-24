@@ -330,6 +330,25 @@ namespace Generator
                     }
                 }
             }
+            else if (id == "nullcoalescing") {
+                var p1 = data.GetParam(0);
+                var p2 = data.GetParamId(1);
+                var p3 = data.GetParam(2);
+                if (p2 == "true") {
+                    sb.Append("nullcoalescing(");
+                    GenerateSyntaxComponent(p1, sb, indent, false, 0);
+                    sb.Append(", function(){ return ");
+                    GenerateSyntaxComponent(p3, sb, indent, false, 0);
+                    sb.Append(";})");
+                }
+                else {
+                    sb.Append("nullcoalescing(");
+                    GenerateSyntaxComponent(p1, sb, indent, false, 0);
+                    sb.Append(", ");
+                    GenerateSyntaxComponent(p3, sb, indent, false, 0);
+                    sb.Append(")");
+                }
+            }
             else if (id == "comment") {
                 sb.AppendFormat("//{0}", data.GetParamId(0));
             }
