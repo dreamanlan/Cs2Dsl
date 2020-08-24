@@ -97,46 +97,54 @@ namespace Generator
                             var mdef = def as Dsl.FunctionData;
                             if (mdef.GetId() == "=") {
                                 string mname = mdef.GetParamId(0);
-                                var fdef = mdef.GetParam(1) as Dsl.FunctionData;
-                                if (null != fdef) {
-                                    var fcall = fdef.ThisOrLowerOrderCall;
-                                    int paramsStart = 0;
-                                    sb.AppendFormat("{0}this.{1} = {2}(", GetIndentString(indent), mname, fcall.GetId());
-                                    prestr = string.Empty;
-                                    for (int ix = 1; ix < fcall.Params.Count; ++ix) {
-                                        var param = fcall.Params[ix];
-                                        string paramId = param.GetId();
-                                        if (paramId == "...") {
-                                            paramsStart = ix - 1;
-                                            continue;
-                                        }
-                                        sb.Append(prestr);
-                                        prestr = ", ";
-                                        var pv = param as Dsl.ValueData;
-                                        if (null != pv) {
-                                            sb.Append(paramId);
-                                        }
-                                        else {
-                                            var pc = param as Dsl.FunctionData;
-                                            if (null != pc) {
-                                                sb.Append(pc.GetParamId(0));
+                                var fdef = mdef.GetParam(1) as Dsl.StatementData;
+                                if (null != fdef && fdef.GetFunctionNum() == 2) {
+                                    var first = fdef.First;
+                                    var second = fdef.Second;
+                                    int rct;
+                                    int.TryParse(first.GetParamId(0), out rct);
+                                    if (second.HaveStatement()) {
+                                        var fcall = second;
+                                        if (second.IsHighOrder)
+                                            fcall = second.LowerOrderFunction;
+                                        int paramsStart = 0;
+                                        sb.AppendFormat("{0}this.{1} = {2}(", GetIndentString(indent), mname, "function");
+                                        prestr = string.Empty;
+                                        for (int ix = 1; ix < fcall.Params.Count; ++ix) {
+                                            var param = fcall.Params[ix];
+                                            string paramId = param.GetId();
+                                            if (paramId == "...") {
+                                                paramsStart = ix - 1;
+                                                continue;
+                                            }
+                                            sb.Append(prestr);
+                                            prestr = ", ";
+                                            var pv = param as Dsl.ValueData;
+                                            if (null != pv) {
+                                                sb.Append(paramId);
+                                            }
+                                            else {
+                                                var pc = param as Dsl.FunctionData;
+                                                if (null != pc) {
+                                                    sb.Append(pc.GetParamId(0));
+                                                }
                                             }
                                         }
-                                    }
-                                    sb.AppendLine("){");
-                                    ++indent;
-                                    foreach (var comp in fdef.Params) {
-                                        GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
-                                        string subId = comp.GetId();
-                                        if (subId != "comments" && subId != "comment") {
-                                            sb.AppendLine(";");
+                                        sb.AppendLine("){");
+                                        ++indent;
+                                        foreach (var comp in second.Params) {
+                                            GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
+                                            string subId = comp.GetId();
+                                            if (subId != "comments" && subId != "comment") {
+                                                sb.AppendLine(";");
+                                            }
+                                            else {
+                                                sb.AppendLine();
+                                            }
                                         }
-                                        else {
-                                            sb.AppendLine();
-                                        }
+                                        --indent;
+                                        sb.AppendFormatLine("{0}}}", GetIndentString(indent));
                                     }
-                                    --indent;
-                                    sb.AppendFormatLine("{0}}}", GetIndentString(indent));
                                 }
                             }
                         }
@@ -167,46 +175,54 @@ namespace Generator
                             var mdef = def as Dsl.FunctionData;
                             if (mdef.GetId() == "=") {
                                 string mname = mdef.GetParamId(0);
-                                var fdef = mdef.GetParam(1) as Dsl.FunctionData;
-                                if (null != fdef) {
-                                    int paramsStart = 0;
-                                    var fcall = fdef.ThisOrLowerOrderCall;
-                                    sb.AppendFormat("{0}{1}.{2} = {3}(", GetIndentString(indent), className, mname, fcall.GetId());
-                                    prestr = string.Empty;
-                                    for (int ix = 0; ix < fcall.Params.Count; ++ix) {
-                                        var param = fcall.Params[ix];
-                                        string paramId = param.GetId();
-                                        if (paramId == "...") {
-                                            paramsStart = ix;
-                                            continue;
-                                        }
-                                        sb.Append(prestr);
-                                        prestr = ", ";
-                                        var pv = param as Dsl.ValueData;
-                                        if (null != pv) {
-                                            sb.Append(pv.GetId());
-                                        }
-                                        else {
-                                            var pc = param as Dsl.FunctionData;
-                                            if (null != pc) {
-                                                sb.Append(pc.GetParamId(0));
+                                var fdef = mdef.GetParam(1) as Dsl.StatementData;
+                                if (null != fdef && fdef.GetFunctionNum() == 2) {
+                                    var first = fdef.First;
+                                    var second = fdef.Second;
+                                    int rct;
+                                    int.TryParse(first.GetParamId(0), out rct);
+                                    if (second.HaveStatement()) {
+                                        var fcall = second;
+                                        if (second.IsHighOrder)
+                                            fcall = second.LowerOrderFunction;
+                                        int paramsStart = 0;
+                                        sb.AppendFormat("{0}{1}.{2} = {3}(", GetIndentString(indent), className, mname, "function");
+                                        prestr = string.Empty;
+                                        for (int ix = 0; ix < fcall.Params.Count; ++ix) {
+                                            var param = fcall.Params[ix];
+                                            string paramId = param.GetId();
+                                            if (paramId == "...") {
+                                                paramsStart = ix;
+                                                continue;
+                                            }
+                                            sb.Append(prestr);
+                                            prestr = ", ";
+                                            var pv = param as Dsl.ValueData;
+                                            if (null != pv) {
+                                                sb.Append(pv.GetId());
+                                            }
+                                            else {
+                                                var pc = param as Dsl.FunctionData;
+                                                if (null != pc) {
+                                                    sb.Append(pc.GetParamId(0));
+                                                }
                                             }
                                         }
-                                    }
-                                    sb.AppendLine("){");
-                                    ++indent;
-                                    foreach (var comp in fdef.Params) {
-                                        GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
-                                        string subId = comp.GetId();
-                                        if (subId != "comments" && subId != "comment") {
-                                            sb.AppendLine(";");
+                                        sb.AppendLine("){");
+                                        ++indent;
+                                        foreach (var comp in second.Params) {
+                                            GenerateSyntaxComponent(comp, sb, indent, true, paramsStart);
+                                            string subId = comp.GetId();
+                                            if (subId != "comments" && subId != "comment") {
+                                                sb.AppendLine(";");
+                                            }
+                                            else {
+                                                sb.AppendLine();
+                                            }
                                         }
-                                        else {
-                                            sb.AppendLine();
-                                        }
+                                        --indent;
+                                        sb.AppendFormatLine("{0}}}", GetIndentString(indent));
                                     }
-                                    --indent;
-                                    sb.AppendFormatLine("{0}}}", GetIndentString(indent));
                                 }
                             }
                         }
