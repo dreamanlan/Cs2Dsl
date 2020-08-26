@@ -352,16 +352,16 @@ namespace Generator
                 var p3 = data.GetParam(2);
                 if (p2 == "true") {
                     sb.Append("nullcoalescing(");
-                    GenerateSyntaxComponent(p1, sb, indent, false, 0);
+                    GenerateSyntaxComponent(p1, sb, indent, false, paramsStart);
                     sb.Append(", function(){ return ");
-                    GenerateSyntaxComponent(p3, sb, indent, false, 0);
+                    GenerateSyntaxComponent(p3, sb, indent, false, paramsStart);
                     sb.Append(";})");
                 }
                 else {
                     sb.Append("nullcoalescing(");
-                    GenerateSyntaxComponent(p1, sb, indent, false, 0);
+                    GenerateSyntaxComponent(p1, sb, indent, false, paramsStart);
                     sb.Append(", ");
-                    GenerateSyntaxComponent(p3, sb, indent, false, 0);
+                    GenerateSyntaxComponent(p3, sb, indent, false, paramsStart);
                     sb.Append(")");
                 }
             }
@@ -389,6 +389,33 @@ namespace Generator
                 }
                 if (data.GetParamNum() > 1)
                     sb.Append("]");
+            }
+            else if (id == "prefixoperator") {
+                var varExp = data.GetParam(0);
+                var opExp = data.GetParam(1);
+                sb.Append("(function(){ ");
+                GenerateSyntaxComponent(varExp, sb, 0, false, paramsStart);
+                sb.Append(" = ");
+                GenerateSyntaxComponent(opExp, sb, 0, false, paramsStart);
+                sb.Append("; return ");
+                GenerateSyntaxComponent(varExp, sb, 0, false, paramsStart);
+                sb.Append(";)()");
+            }
+            else if (id == "postfixoperator") {
+                var oldVal = data.GetParam(0);
+                var varExp = data.GetParam(1);
+                var opExp = data.GetParam(2);
+                sb.Append("(function(){ local ");
+                sb.Append(oldVal);
+                sb.Append(" = ");
+                GenerateSyntaxComponent(varExp, sb, 0, false, paramsStart);
+                sb.Append("; ");
+                GenerateSyntaxComponent(varExp, sb, 0, false, paramsStart);
+                sb.Append(" = ");
+                GenerateSyntaxComponent(opExp, sb, 0, false, paramsStart);
+                sb.Append("; return ");
+                sb.Append(oldVal);
+                sb.Append(";)()");
             }
             else if (id == "execunary") {
                 string op = data.GetParamId(0);
