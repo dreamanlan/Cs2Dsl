@@ -574,7 +574,7 @@ namespace Generator
                 int.TryParse(data.GetParamId(3), out ct);
                 if (ct <= 3) {
                     //三维以下数组的定义在lualib里实现
-                    sb.AppendFormat("newarraydim{0}({1}, {2}, ", ct);
+                    sb.AppendFormat("newarraydim{0}({1}, {2}, ", ct, typeStr, typeKind);
                     GenerateSyntaxComponent(defVal, sb, 0, false, paramsStart);
                     if (ct > 0) {
                         sb.Append(", ");
