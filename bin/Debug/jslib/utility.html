@@ -130,7 +130,40 @@
 			}
 			function wraparray(arr, size, classObj, typeKind){
 			    return arr;
-			}			
+            }
+            function newarraydim0(classObj, typeKind, defVal) {
+                throw "illegal array !";
+            }
+            function newarraydim1(classObj, typeKind, defVal, size1) {
+                var arr = wraparray([], size1, classObj, typeKind);
+                for (var i = 1; i < size1; ++i) {
+                    arr[i] = defVal;
+                }
+                return arr;
+            }
+            function newarraydim2(classObj, typeKind, defVal, size1, size2) {
+                var arr = wraparray([], size1, classObj, typeKind);
+                for (var i = 1; i < size1; ++i) {
+                    arr[i] = wraparray([], size2, classObj, typeKind);
+                    for (var j = 1; j < size2; ++j) {
+                        arr[i][j] = defVal;
+                    }
+                }
+                return arr;
+            }
+            function newarraydim3(classObj, typeKind, defVal, size1, size2, size3) {
+                var arr = wraparray([], size1, classObj, typeKind);
+                for (var i = 1; i < size1; ++i) {
+                    arr[i] = wraparray([], size2, classObj, typeKind);
+                    for (var j = 1; j < size2; ++j) {
+                        arr[i][j] = wraparray([], size3, classObj, typeKind);
+                        for (var k = 1; k < size3; ++k) {
+                            arr[i][j][k] = defVal;
+                        }
+                    }
+                }
+                return arr;
+            }
 			function newobject(classObj, typeargs, typekinds, ctor, initializer){
 				var args = getParams(3);
 				var obj = new classObj();

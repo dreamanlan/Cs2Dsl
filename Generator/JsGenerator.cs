@@ -566,6 +566,61 @@ namespace Generator
                     sb.AppendFormat("wraparray([], nil, {0}, {1})", typeStr, typeKind);
                 }
             }
+            else if (id == "newmultiarray") {
+                var typeStr = CalcTypeString(data.GetParam(0));
+                var typeKind = CalcTypeString(data.GetParam(1));
+                var defVal = data.GetParam(2);
+                int ct;
+                int.TryParse(data.GetParamId(3), out ct);
+                if (ct <= 3) {
+                    //三维以下数组的定义在lualib里实现
+                    sb.AppendFormat("newarraydim{0}({1}, {2}, ", ct);
+                    GenerateSyntaxComponent(defVal, sb, 0, false, paramsStart);
+                    if (ct > 0) {
+                        sb.Append(", ");
+                        var exp = data.GetParam(4 + 0);
+                        GenerateSyntaxComponent(exp, sb, 0, false, paramsStart);
+                    }
+                    if (ct > 1) {
+                        sb.Append(", ");
+                        var exp = data.GetParam(4 + 1);
+                        GenerateSyntaxComponent(exp, sb, 0, false, paramsStart);
+                    }
+                    if (ct > 2) {
+                        sb.Append(", ");
+                        var exp = data.GetParam(4 + 2);
+                        GenerateSyntaxComponent(exp, sb, 0, false, paramsStart);
+                    }
+                    sb.Append(")");
+                }
+                else {
+                    //四维及以上数组在这里使用函数对象嵌入初始化代码，应该很少用到
+                    sb.Append("(function(){");
+                    for (int i = 0; i < ct; ++i) {
+                        sb.AppendFormat(" var d{0} = ", i);
+                        var exp = data.GetParam(4 + i);
+                        GenerateSyntaxComponent(exp, sb, 0, false, paramsStart);
+                        if (i == 0) {
+                            sb.AppendFormat("; var arr = wraparray([], d0, {0}, {1})", typeStr, typeKind);
+                        }
+                        sb.AppendFormat("; for(var i{0} = 1; i{0} < d{1}; ++i{0}){{ arr{2} = ", i, i, GetArraySubscriptString(i));
+                        if (i < ct - 1) {
+                            sb.Append("wraparray([], ");
+                            var nextExp = data.GetParam(4 + i + 1);
+                            GenerateSyntaxComponent(nextExp, sb, 0, false, paramsStart);
+                            sb.AppendFormat(", {0}, {1});", typeStr, typeKind);
+                        }
+                        else {
+                            GenerateSyntaxComponent(defVal, sb, 0, false, paramsStart);
+                            sb.Append(";");
+                        }
+                    }
+                    for (int i = 0; i < ct; ++i) {
+                        sb.Append(" };");
+                    }
+                    sb.Append(" return arr; })()");
+                }
+            }
             else {
                 if (null != callData) {
                     GenerateSyntaxComponent(callData, sb, indent, false, paramsStart);
@@ -822,6 +877,14 @@ namespace Generator
         {
             const string c_IndentString = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
             return c_IndentString.Substring(0, indent);
+        }
+        private static string GetArraySubscriptString(int index)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i <= index; ++i) {
+                sb.AppendFormat("[i{0}]", i);
+            }
+            return sb.ToString();
         }
         private static string Escape(string src)
         {
