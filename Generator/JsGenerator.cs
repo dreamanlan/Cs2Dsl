@@ -498,6 +498,14 @@ namespace Generator
                 }
                 sb.Append(")");
             }
+            else if (id == "calldelegation" || id == "callexterndelegation") {
+                var obj = data.Params[0];
+                GenerateSyntaxComponent(obj, sb, indent, false, paramsStart);
+                sb.Append("(");
+                int start = 1;
+                GenerateArguments(data, sb, indent, start);
+                sb.Append(")");
+            }
             else if (id == "typeargs") {
                 if (data.GetParamNum() > 0) {
                     sb.Append("[");
