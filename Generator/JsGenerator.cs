@@ -274,7 +274,6 @@ namespace Generator
             switch (data.GetIdType()) {
                 case (int)Dsl.ValueData.ID_TOKEN:
                 case (int)Dsl.ValueData.NUM_TOKEN:
-                case (int)Dsl.ValueData.BOOL_TOKEN:
                     sb.Append(id);
                     break;
                 case (int)Dsl.ValueData.STRING_TOKEN:
