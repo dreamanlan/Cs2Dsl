@@ -701,19 +701,6 @@ namespace Generator
                     sb.AppendLine();
                 }
             }
-            else if (id == "local") {
-                bool first = true;
-                foreach (var comp in data.Params) {
-                    if (!first) {
-                        sb.AppendLine(";");
-                    }
-                    else {
-                        first = false;
-                    }
-                    sb.Append("var ");
-                    GenerateSyntaxComponent(comp, sb, indent, false, paramsStart);
-                }
-            }
             else if (id == "execclosure") {
                 string localName = data.GetParamId(0);
                 bool needDecl = (bool)Convert.ChangeType(data.GetParamId(1), typeof(bool));
