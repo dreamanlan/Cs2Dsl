@@ -1,0 +1,71 @@
+require "cs2lua__namespaces"; 
+
+TestExtension = {
+	-------------------------------
+	-------- class methods --------
+	-------------------------------
+	Test = function(list, T, t)
+		local __cs2lua_func_info = luainitialize();
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		TestExtension.__cctor();
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	__cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		if TestExtension.__cctor_called then 
+			__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			return;
+		else
+			TestExtension.__cctor_called = true;
+		end;
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	-------------------------------
+	-------- class fields --------
+	-------------------------------
+	__cctor_called = false,
+
+	-------------------------------
+	--- define class and object ---
+	-------------------------------
+	__define_class = function()
+		Utility.Warn("TestExtension::__define_class begin");
+
+		local class = TestExtension;
+
+		local obj_methods = nil;
+
+		local obj_build = function()
+			return nil;
+		end;
+
+		local __defineclass_return = defineclass(nil, "TestExtension", "TestExtension", class, obj_methods, obj_build, false);
+		Utility.Warn("TestExtension::__define_class end");
+		return __defineclass_return;
+	end,
+
+	-------------------------------
+	--------- fields info ---------
+	-------------------------------
+	__class_fields = {
+		__cctor_called = true,
+	},
+
+
+	-------------------------------
+	-------- metadata info --------
+	-------------------------------
+};
+
+
+require "cs2lua__syslib";
+require "cs2lua__externenums";
+require "cs2lua__interfaces";
+require "intlist";
+settempmetatable(TestExtension);

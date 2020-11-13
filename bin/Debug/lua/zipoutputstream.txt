@@ -1,0 +1,248 @@
+require "cs2lua__namespaces"; 
+
+ZipOutputStream = {
+	-------------------------------
+	-------- class methods --------
+	-------------------------------
+	__new_object = function(...)
+		local __cs2lua_func_info = luainitialize();
+		local __cs2dsl_newobj;
+		__cs2dsl_newobj = newobject(__cs2lua_func_info, ZipOutputStream, nil, nil, "ctor", nil, ...);
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+		return __cs2dsl_newobj;
+	end,
+
+	get_Instance = function()
+		local __cs2lua_func_info = luainitialize();
+		local __method_ret_102_4_105_5;
+		__method_ret_102_4_105_5 = ZipOutputStream.s_Instance;
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+		return __method_ret_102_4_105_5;
+	end,
+
+	cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		ZipOutputStream.__cctor();
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	__cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		if ZipOutputStream.__cctor_called then 
+			__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			return;
+		else
+			ZipOutputStream.__cctor_called = true;
+		end;
+		ZipOutputStream.s_Instance = newobject(__cs2lua_func_info, ZipOutputStream, nil, nil, "ctor", nil);
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	-------------------------------
+	-------- class fields --------
+	-------------------------------
+	__cctor_called = false,
+
+	-------------------------------
+	--- define class and object ---
+	-------------------------------
+	__define_class = function()
+		Utility.Warn("ZipOutputStream::__define_class begin");
+
+		local class = ZipOutputStream;
+
+		local obj_methods = {
+			ctor__System_IO_MemoryStream = function(this, ms)
+				local __cs2lua_func_info = luainitialize();
+				this:__ctor();
+				ZipOutputStream.get_Instance().V = 1;
+				ZipOutputStream.get_Instance():Test();
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+				return this;
+			end,
+
+			Test = function(this)
+				local __cs2lua_func_info = luainitialize();
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			end,
+
+			ctor = function(this)
+				local __cs2lua_func_info = luainitialize();
+				this:__ctor();
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+				return this;
+			end,
+
+			__ctor = function(this)
+				local __cs2lua_func_info = luainitialize();
+				if this.__ctor_called then 
+					__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+					return;
+				else
+					this.__ctor_called = true;
+				end;
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			end,
+		};
+
+		local obj_build = function()
+			return {
+				V = 0,
+				m_I = 1,
+				__ctor_called = false,
+			};
+		end;
+
+		local __defineclass_return = defineclass(nil, "ZipOutputStream", "ZipOutputStream", class, obj_methods, obj_build, false);
+		Utility.Warn("ZipOutputStream::__define_class end");
+		return __defineclass_return;
+	end,
+
+	-------------------------------
+	--------- fields info ---------
+	-------------------------------
+	__class_fields = {
+		s_Instance = true,
+		__cctor_called = true,
+	},
+
+	__obj_fields = {
+		V = true,
+		m_I = true,
+		__ctor_called = true,
+	},
+
+	-------------------------------
+	-------- metadata info --------
+	-------------------------------
+	__method_info = {
+		ctor__System_IO_MemoryStream = {
+			Kind = MethodKind.Constructor,
+		},
+		get_V = {
+			Kind = MethodKind.PropertyGet,
+		},
+		set_V = {
+			Kind = MethodKind.PropertySet,
+		},
+		Test = {
+			Kind = MethodKind.Ordinary,
+		},
+		ctor = {
+			Kind = MethodKind.Constructor,
+		},
+		get_Instance = {
+			Kind = MethodKind.PropertyGet,
+			static = true,
+		},
+	},
+};
+
+ZipOutputStream.EmbedClass = {
+	-------------------------------
+	-------- class methods --------
+	-------------------------------
+	__new_object = function(...)
+		local __cs2lua_func_info = luainitialize();
+		local __cs2dsl_newobj;
+		__cs2dsl_newobj = newobject(__cs2lua_func_info, ZipOutputStream.EmbedClass, nil, nil, "ctor", nil, ...);
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+		return __cs2dsl_newobj;
+	end,
+
+	cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		ZipOutputStream.EmbedClass.__cctor();
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	__cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		if ZipOutputStream.EmbedClass.__cctor_called then 
+			__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			return;
+		else
+			ZipOutputStream.EmbedClass.__cctor_called = true;
+		end;
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	-------------------------------
+	-------- class fields --------
+	-------------------------------
+	__cctor_called = false,
+
+	-------------------------------
+	--- define class and object ---
+	-------------------------------
+	__define_class = function()
+		Utility.Warn("ZipOutputStream.EmbedClass::__define_class begin");
+
+		local class = ZipOutputStream.EmbedClass;
+
+		local obj_methods = {
+			Test = function(this)
+				local __cs2lua_func_info = luainitialize();
+				ZipOutputStream.get_Instance():Test();
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			end,
+
+			ctor = function(this)
+				local __cs2lua_func_info = luainitialize();
+				this:__ctor();
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			end,
+
+			__ctor = function(this)
+				local __cs2lua_func_info = luainitialize();
+				if this.__ctor_called then 
+					__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+					return;
+				else
+					this.__ctor_called = true;
+				end;
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			end,
+		};
+
+		local obj_build = function()
+			return {
+				__ctor_called = false,
+			};
+		end;
+
+		local __defineclass_return = defineclass(nil, "ZipOutputStream.EmbedClass", "EmbedClass", class, obj_methods, obj_build, false);
+		Utility.Warn("ZipOutputStream.EmbedClass::__define_class end");
+		return __defineclass_return;
+	end,
+
+	-------------------------------
+	--------- fields info ---------
+	-------------------------------
+	__class_fields = {
+		__cctor_called = true,
+	},
+
+	__obj_fields = {
+		__ctor_called = true,
+	},
+
+	-------------------------------
+	-------- metadata info --------
+	-------------------------------
+	__method_info = {
+		Test = {
+			Kind = MethodKind.Ordinary,
+		},
+		ctor = {
+			Kind = MethodKind.Constructor,
+		},
+	},
+};
+
+
+require "cs2lua__syslib";
+require "cs2lua__externenums";
+require "cs2lua__interfaces";
+settempmetatable(ZipOutputStream.EmbedClass);
+settempmetatable(ZipOutputStream);

@@ -1,0 +1,208 @@
+require "cs2lua__namespaces"; 
+
+CUsingHelper = {
+	-------------------------------
+	-------- class methods --------
+	-------------------------------
+	__new_object = function(...)
+		local __cs2lua_func_info = luainitialize();
+		local __cs2dsl_newobj;
+		__cs2dsl_newobj = newobject(__cs2lua_func_info, CUsingHelper, nil, nil, "ctor", nil, ...);
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+		return __cs2dsl_newobj;
+	end,
+
+	Test = function(i)
+		local __cs2lua_func_info = luainitialize();
+		local __method_ret_117_4_120_5;
+		__method_ret_117_4_120_5 = nil;
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+		return __method_ret_117_4_120_5;
+	end,
+
+	ReadZip = function(bytes)
+		local __cs2lua_func_info = luainitialize();
+		local __method_ret_122_4_179_5;
+		local abc;
+		abc = newarraydim2(System.Int32, TypeKind.Struct, 0, 12, 13);
+		local v;
+		v = 0;
+		local dict;
+		dict = newexterndictionary(System.Collections.Generic.Dictionary_TKey_TValue, {System.Int32, System.Int32}, {TypeKind.Struct, TypeKind.Struct}, {}, luastrtocsstr("System.Collections.Generic.Dictionary_TKey_TValue:ctor__Void"));
+		--
+		v = (v + 1);
+		if (v > 0) then
+
+		else
+			--
+			local __invoke_131_16_131_42;
+			__invoke_131_16_131_42,v = dict:TryGetValue(1, __cs2lua_out);
+			if (__invoke_131_16_131_42 and (v == 0)) then
+
+			else
+				--
+				local __unary_133_21_133_24 = v; v = (v + 1);
+				if (__unary_133_21_133_24 > 0) then
+
+				else
+					--
+					v = (v - 1);
+					if (v > 0) then
+
+					else
+					end;
+				end;
+			end;
+		end;
+				--        if(dict.TryGetValue(1, out v) && v==0) {
+		--        }
+		--        while (dict.TryGetValue(1, out v) && v == 0) {
+		--        }
+		--        do {
+		--        } while (dict.TryGetValue(1, out v) && v == 0);
+		--        
+		--        int v1 = ++v + 2;
+		--        int v2 = v++ + 2;
+		--        if(++v > 0) {
+		--        }
+		--        if(v++ > 0) {
+		--        }
+		--        while(++v > 0) {
+		--        }
+		--        while (v-- > 0) {
+		--        }
+		--        do {
+		--        } while (++v > 0);
+		--        do {
+		--        } while (v-- > 0);
+		--        
+
+				--        ZipInputStream zipInput = new ZipInputStream(new MemoryStream(bytes));
+		--		MemoryStream zipMemory = new MemoryStream();
+		--		ZipOutputStream ZipStream = new ZipOutputStream(zipMemory);
+		--		try
+		--		{
+		--			return Test(123);
+		--		}
+		--		catch (Exception)
+		--		{
+		--			return null;
+		--			throw;
+		--		}
+		--        
+
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+		return nil;
+	end,
+
+	cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		CUsingHelper.__cctor();
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	__cctor = function()
+		local __cs2lua_func_info = luainitialize();
+		if CUsingHelper.__cctor_called then 
+			__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			return;
+		else
+			CUsingHelper.__cctor_called = true;
+		end;
+		__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+	end,
+
+	-------------------------------
+	-------- class fields --------
+	-------------------------------
+	__attributes = CUsingHelper__Attrs,
+	__cctor_called = false,
+
+	-------------------------------
+	--- define class and object ---
+	-------------------------------
+	__define_class = function()
+		Utility.Warn("CUsingHelper::__define_class begin");
+
+		local class = CUsingHelper;
+
+		local obj_methods = {
+			ctor = function(this, a1, a2)
+				local __cs2lua_func_info = luainitialize();
+				this:__ctor();
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+				return this;
+			end,
+
+			Dispose = function(this)
+				local __cs2lua_func_info = luainitialize();
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			end,
+
+			__ctor = function(this)
+				local __cs2lua_func_info = luainitialize();
+				if this.__ctor_called then 
+					__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+					return;
+				else
+					this.__ctor_called = true;
+				end;
+				__cs2lua_func_info = luafinalize(__cs2lua_func_info);
+			end,
+		};
+
+		local obj_build = function()
+			return {
+				__attributes = CUsingHelper__Attrs,
+				__ctor_called = false,
+			};
+		end;
+
+		local __defineclass_return = defineclass(nil, "CUsingHelper", "CUsingHelper", class, obj_methods, obj_build, false);
+		Utility.Warn("CUsingHelper::__define_class end");
+		return __defineclass_return;
+	end,
+
+	-------------------------------
+	--------- fields info ---------
+	-------------------------------
+	__class_fields = {
+		__attributes = true,
+		__cctor_called = true,
+	},
+
+	__obj_fields = {
+		__attributes = true,
+		__ctor_called = true,
+	},
+
+	-------------------------------
+	-------- metadata info --------
+	-------------------------------
+	__interfaces = {
+		"System.IDisposable",
+	},
+	__method_info = {
+		ctor = {
+			Kind = MethodKind.Constructor,
+		},
+		Dispose = {
+			Kind = MethodKind.Ordinary,
+		},
+		Test = {
+			Kind = MethodKind.Ordinary,
+			static = true,
+		},
+		ReadZip = {
+			Kind = MethodKind.Ordinary,
+			static = true,
+		},
+	},
+};
+
+
+require "cs2lua__syslib";
+require "cs2lua__attributes";
+require "cs2lua__externenums";
+require "cs2lua__interfaces";
+settempmetatable(CUsingHelper);
