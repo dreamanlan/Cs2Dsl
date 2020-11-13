@@ -8,8 +8,8 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>RoslynTool</RootNamespace>
-    <AssemblyName>Cs2Dsl</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <AssemblyName>Cs2Lua</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -64,6 +64,9 @@
     <Compile Include="AnalysisHelper\TryCatchUsingAnalysis.cs" />
     <Compile Include="AnalysisHelper\TypeAnalysis.cs" />
     <Compile Include="AnalysisHelper\YieldAnalysis.cs" />
+    <Compile Include="CsToDsl\CsToDsl.cs" />
+    <Compile Include="CsToDsl\CsToDslProcessor.cs" />
+    <Compile Include="CsToDsl\CsToDslUnimplemented.cs" />
     <Compile Include="CsToDsl\CsToDsl_CoreSyntax.cs" />
     <Compile Include="CsToDsl\CsToDsl_Exception.cs" />
     <Compile Include="CsToDsl\CsToDsl_Expression.cs" />
@@ -72,15 +75,13 @@
     <Compile Include="CsToDsl\CsToDsl_Object.cs" />
     <Compile Include="CsToDsl\CsToDsl_Statement.cs" />
     <Compile Include="CsToDsl\Logger.cs" />
+    <Compile Include="dep\DslCalculator.cs" />
     <Compile Include="Generator\JsGenerator.cs" />
     <Compile Include="Generator\LuaGenerator.cs" />
     <Compile Include="Generator\LuaGenerator_Helper.cs" />
     <Compile Include="Generator\LuaGenerator_Main.cs" />
     <Compile Include="Info\ClassInfo.cs" />
     <Compile Include="AnalysisHelper\ContinueAnalysis.cs" />
-    <Compile Include="CsToDsl\CsToDsl.cs" />
-    <Compile Include="CsToDsl\CsToDslProcessor.cs" />
-    <Compile Include="CsToDsl\CsToDslUnimplemented.cs" />
     <Compile Include="AnalysisHelper\FieldInitializerAnalysis.cs" />
     <Compile Include="AnalysisHelper\DslKeywordsReplacer.cs" />
     <Compile Include="Info\ClassSymbolInfo.cs" />
