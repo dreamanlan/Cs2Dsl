@@ -1,13 +1,12 @@
 script(wrapoutstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //wrapoutstruct(funcInfo, v, classObj)
+    //wrapoutstruct(v, classObj)
     return(false);
 };
 
 script(wrapoutexternstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //wrapoutexternstruct(funcInfo, v, classObj)
-    $v = getargument($funcData, 0);
+    //wrapoutexternstruct(v, classObj)
     $classObj = getargument($funcData, 1);
     
     if($classObj=="UnityEngine.Vector2"){
@@ -69,14 +68,13 @@ script(wrapoutexternstruct)args($funcData, $funcOpts, $sb, $indent)
 
 script(wrapstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //wrapstruct(funcInfo, v, classObj)
+    //wrapstruct(v, classObj)
     return(false);
 };
 
 script(wrapexternstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //wrapexternstruct(funcInfo, v, classObj)
-    $v = getargument($funcData, 0);
+    //wrapexternstruct(v, classObj)
     $classObj = getargument($funcData, 1);
     
     if($classObj=="UnityEngine.Vector2"){
@@ -142,7 +140,7 @@ script(wrapexternstruct)args($funcData, $funcOpts, $sb, $indent)
 
 script(getexternstaticstructmember)args($funcData, $funcOpts, $sb, $indent)
 {
-    //getexternstaticstructmember(funcInfo, symKind, class, member)
+    //getexternstaticstructmember(symKind, class, member)
     $symKind = getargument($funcData, 0);
     $class = getargument($funcData, 1);
     $member = getargument($funcData, 2);
@@ -350,7 +348,7 @@ script(getexternstaticstructmember)args($funcData, $funcOpts, $sb, $indent)
 
 script(getexterninstancestructmember)args($funcData, $funcOpts, $sb, $indent)
 {
-    //getexterninstancestructmember(funcInfo, symKind, obj, class, member)
+    //getexterninstancestructmember(symKind, obj, class, member)
     $symKind = getargument($funcData, 0);
     $class = getargument($funcData, 2);
     $member = getargument($funcData, 3);
@@ -494,19 +492,19 @@ script(getexterninstancestructmember)args($funcData, $funcOpts, $sb, $indent)
 
 script(callexterndelegationreturnstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //callexterndelegationreturnstruct(funcInfo, funcobj, funcobjname, ...)
+    //callexterndelegationreturnstruct(funcobj, funcobjname, ...)
     return(false);
 };
 
 script(callexternextensionreturnstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //callexternextensionreturnstruct(funcInfo, class, member, ...)
+    //callexternextensionreturnstruct(class, member, ...)
     return(false);
 };
 
 script(callexternstaticreturnstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //callexternstaticreturnstruct(funcInfo, class, member, ...)
+    //callexternstaticreturnstruct(class, member, ...)
     $class = getargument($funcData, 0);
     $member = getargument($funcData, 1);    
     
@@ -687,10 +685,9 @@ script(callexternstaticreturnstruct)args($funcData, $funcOpts, $sb, $indent)
 
 script(callexterninstancereturnstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //callexterninstancereturnstruct(funcInfo, obj, class, member, ...)
-    $symKind = getargument($funcData, 0);
-    $class = getargument($funcData, 2);
-    $member = getargument($funcData, 3);
+    //callexterninstancereturnstruct(obj, class, member, ...)
+    $class = getargument($funcData, 1);
+    $member = getargument($funcData, 2);
         
     if($class=="UnityEngine.Transform"){
         if($member=="TransformDirection"){
@@ -813,7 +810,7 @@ script(callexterninstancereturnstruct)args($funcData, $funcOpts, $sb, $indent)
 
 script(recycleandkeepstructvalue)args($funcData, $funcOpts, $sb, $indent)
 {
-    //recycleandkeepstructvalue(funcInfo, fieldType, oldVal, newVal)
+    //recycleandkeepstructvalue(fieldType, oldVal, newVal)
     $fieldType = getargument($funcData, 0);
         
     if($fieldType=="UnityEngine.Vector2"){
@@ -912,7 +909,7 @@ script(recycleandkeepstructvalue)args($funcData, $funcOpts, $sb, $indent)
 
 script(newstruct)args($funcData, $funcOpts, $sb, $indent)
 {
-    //newstruct(funcInfo, class, typeargs, typekinds, ctor, initializer, ...)
+    //newstruct(class, typeargs, typekinds, ctor, initializer, ...)
     return(false);
 };
 
