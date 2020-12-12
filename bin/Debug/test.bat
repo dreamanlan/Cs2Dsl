@@ -5,4 +5,7 @@ cd %workdir%
 del /s/f/q dsl\*.dsl
 del /s/f/q dsl\*.txt
 del /s/f/q dsl\*.js
-Cs2Dsl -enableinherit -enablelinq -refbypath ..\..\dep\UnityEngine.dll -js -src test_js.cs
+del /s/f/q lua\*.txt
+Cs2Lua -enableinherit -enablelinq -refbypath ..\..\dep\UnityEngine.dll -src test.cs
+
+
