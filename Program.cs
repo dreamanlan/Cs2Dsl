@@ -146,9 +146,9 @@ namespace RoslynTool
                         else if (0 == string.Compare(args[i], "-componentbystring", true)) {
                             SymbolTable.DslComponentByString = true;
                         }
-                        else if (0 == string.Compare(args[i], "-usearraygetset", true)) {
-                            SymbolTable.UseArrayGetSet = true;
-                        }
+                        else if (0 == string.Compare(args[i], "-arraylowerboundiszero", true)) {
+                            SymbolTable.ArrayLowerBoundIsOne = false;
+                        }                        
                         else if (0 == string.Compare(args[i], "-enabletranslationcheck", true)) {
                             SymbolTable.EnableTranslationCheck = true;
                         }
@@ -232,7 +232,7 @@ namespace RoslynTool
                         return;
                     }
 
-                    Console.WriteLine("[Usage]:Cs2Dsl [-out dir] [-ext fileext] [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-usearraygetset] [-arraylowerboundisone] [-d macro] [-u macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
+                    Console.WriteLine("[Usage]:Cs2Dsl [-out dir] [-ext fileext] [-enableinherit] [-enablelinq] [-outputresult] [-noautorequire] [-componentbystring] [-arraylowerboundiszero] [-d macro] [-u macro] [-ignorepath path] [-refbyname dllname alias] [-refbypath dllpath alias] [-systemdllpath dllpath] [-src] csfile|csprojfile");
                     Console.WriteLine("\twhere:");
                     Console.WriteLine("\t\tfileext = file externsion, default is txt for unity3d, maybe lua for other usage.");
                     Console.WriteLine("\t\tmacro = c# macro define, used in your csharp code #if/#elif/#else/#endif etc.");
