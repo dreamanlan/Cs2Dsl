@@ -1,0 +1,23 @@
+require("cs2js__syslib.js");
+require("cs2js__namespaces.js");
+require("cs2js__externenums.js");
+require("cs2js__interfaces.js");
+
+function Mandelbrot(){
+	this.ctor = function(){
+		this.Mandelbrot("__ctor");
+	}
+	this.r = 10;
+	this.scale = 3.00000000;
+	this.datas = null;
+	this.dicts = null;
+	this.dicts2 = null;
+	this.__ctor_called = false;
+}
+
+(function(){
+	Mandelbrot.cctor = function(){
+		Mandelbrot.__cctor();
+	}
+	Mandelbrot.__cctor_called = false;
+})()
