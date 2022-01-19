@@ -1,0 +1,103 @@
+require "cs2lua__namespaces"; 
+
+Test = {
+	-------------------------------
+	-------- class methods --------
+	-------------------------------
+	__new_object = function(...)
+		local __cs2dsl_newobj;
+		__cs2dsl_newobj = newobject(Test, nil, nil, "ctor", 0, nil, ...);
+		return __cs2dsl_newobj;
+	end,
+
+	cctor = function()
+		Test.__cctor();
+	end,
+
+	__cctor = function()
+		if Test.__cctor_called then 
+			return;
+		else
+			Test.__cctor_called = true;
+		end;
+	end,
+
+	-------------------------------
+	-------- class fields --------
+	-------------------------------
+	__cctor_called = false,
+
+	-------------------------------
+	------ instance methods -------
+	-------------------------------
+	Init = function(this)
+		Cs2LuaObjectPoolEx_DataChangeCallBackInfo.Init__Func_1_T__Action_1_T(this.m_DataChangeCallBackInfoPool, nil, nil);
+	end,
+
+	ctor = function(this)
+		Test.__ctor(this);
+	end,
+
+	__ctor = function(this)
+		if this.__ctor_called then 
+			return;
+		else
+			this.__ctor_called = true;
+		end;
+		this.m_DataChangeCallBackInfoPool = newobject(Cs2LuaObjectPoolEx_DataChangeCallBackInfo, buildglobalinfoonce("g_Cs2LuaObjectPoolEx_DataChangeCallBackInfo_TypeArgs", getglobalinfo("g_Cs2LuaObjectPoolEx_DataChangeCallBackInfo_TypeArgs") or {DataChangeCallBackInfo}), buildglobalinfoonce("g_Cs2LuaObjectPoolEx_DataChangeCallBackInfo_TypeKinds", getglobalinfo("g_Cs2LuaObjectPoolEx_DataChangeCallBackInfo_TypeKinds") or {TypeKind.Class}), "ctor", 0, nil);
+	end,
+	-------------------------------
+	------ instance fields -------
+	-------------------------------
+	__init_obj_fields = function(this)
+		rawset(this, "__ctor_called", false);
+	end,
+
+	-------------------------------
+	--- define class and object ---
+	-------------------------------
+	__define_class = function()
+		Utility.Warn("Test::__define_class begin");
+
+		local class = Test;
+		local obj_methods = {
+			Init = rawget(class, "Init"),
+			ctor = rawget(class, "ctor"),
+			__ctor = rawget(class, "__ctor"),
+		};
+		local tmp_obj_method = nil;
+
+		local __defineclass_return = defineclass(nil, "Test", "Test", class, obj_methods, false, false);
+		Utility.Warn("Test::__define_class end");
+		return __defineclass_return;
+	end,
+
+	-------------------------------
+	--------- fields info ---------
+	-------------------------------
+	__class_fields = {
+		__cctor_called = true,
+	},
+
+	__obj_fields = {
+		m_DataChangeCallBackInfoPool = true,
+		__ctor_called = true,
+	},
+
+	-------------------------------
+	-------- metadata info --------
+	-------------------------------
+	__method_info = {
+		ctor = {
+			ctor = true,
+		},
+	},
+};
+
+
+require "cs2lua__syslib";
+require "cs2lua__externenums";
+require "cs2lua__interfaces";
+require "datachangecallbackinfo";
+require "cs2luaobjectpoolex_datachangecallbackinfo";
+settempmetatable(Test);

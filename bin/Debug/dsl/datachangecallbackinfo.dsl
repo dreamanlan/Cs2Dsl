@@ -6,7 +6,7 @@ require("cs2dsl__interfaces");
 class(DataChangeCallBackInfo) {
 	static_methods {
 		__new_object = deffunc(1)args(...){
-			local(__cs2dsl_newobj);__cs2dsl_newobj = newobject(DataChangeCallBackInfo, typeargs(), typekinds(), "ctor", null, ...);
+			local(__cs2dsl_newobj);__cs2dsl_newobj = newobject(DataChangeCallBackInfo, "g_DataChangeCallBackInfo", typeargs(), typekinds(), "ctor", 0, null, ...);
 			return(__cs2dsl_newobj);
 		}options[needfuncinfo(false)];
 		cctor = deffunc(0)args(){
@@ -30,18 +30,17 @@ class(DataChangeCallBackInfo) {
 		ctor = deffunc(0)args(this){
 			callinstance(this, DataChangeCallBackInfo, "__ctor");
 			callinstance(this, DataChangeCallBackInfo, "reset");
-			return(this);
-		}options[needfuncinfo(false)],
+		}options[needfuncinfo(false), rettype(return, System.Void, TypeKind.Unknown, 0, false)],
 		reset = deffunc(0)args(this){
 			setinstance(SymbolKind.Field, this, DataChangeCallBackInfo, "m_ActorId", 0);
-		}options[needfuncinfo(false)];
+		}options[needfuncinfo(false), rettype(return, System.Void, TypeKind.Unknown, 0, false)];
 		Downcast = deffunc(1)args(this){
 			local(__method_ret_88_4_91_5);
 			__method_ret_88_4_91_5 = this;
 			return(__method_ret_88_4_91_5);
-		}options[needfuncinfo(false)];
+		}options[needfuncinfo(false), rettype(return, DataChangeCallBackInfo, TypeKind.Class, 0, false)];
 		InitPool = deffunc(0)args(this, pool){
-		}options[needfuncinfo(false)];
+		}options[needfuncinfo(false), rettype(return, System.Void, TypeKind.Unknown, 0, false), paramtype(pool, Cs2LuaObjectPoolEx_DataChangeCallBackInfo, TypeKind.Class, 0, false)];
 		__ctor = deffunc(0)args(this){
 			if(getinstance(SymbolKind.Field, this, DataChangeCallBackInfo, "__ctor_called")){
 				return();
@@ -72,12 +71,6 @@ class(DataChangeCallBackInfo) {
 		Downcast(MethodKind.Ordinary, Accessibility.Public){
 		};
 		InitPool(MethodKind.Ordinary, Accessibility.Public){
-		};
-	};
-	property_info {};
-	event_info {};
-	field_info {
-		m_ActorId(Accessibility.Public){
 		};
 	};
 };
