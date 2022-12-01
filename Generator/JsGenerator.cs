@@ -99,8 +99,8 @@ namespace Generator
                                 string mname = mdef.GetParamId(0);
                                 var fdef = mdef.GetParam(1) as Dsl.StatementData;
                                 if (null != fdef && fdef.GetFunctionNum() == 2) {
-                                    var first = fdef.First;
-                                    var second = fdef.Second;
+                                    var first = fdef.First.AsFunction;
+                                    var second = fdef.Second.AsFunction;
                                     int rct;
                                     int.TryParse(first.GetParamId(0), out rct);
                                     if (second.HaveStatement()) {
@@ -177,8 +177,8 @@ namespace Generator
                                 string mname = mdef.GetParamId(0);
                                 var fdef = mdef.GetParam(1) as Dsl.StatementData;
                                 if (null != fdef && fdef.GetFunctionNum() == 2) {
-                                    var first = fdef.First;
-                                    var second = fdef.Second;
+                                    var first = fdef.First.AsFunction;
+                                    var second = fdef.Second.AsFunction;
                                     int rct;
                                     int.TryParse(first.GetParamId(0), out rct);
                                     if (second.HaveStatement()) {
@@ -750,7 +750,8 @@ namespace Generator
             if (firstLineUseIndent) {
                 sb.AppendFormat("{0}", GetIndentString(indent));
             }
-            foreach (var funcData in data.Functions) {
+            foreach (var fd in data.Functions) {
+                var funcData = fd.AsFunction;
                 var fcall = funcData.ThisOrLowerOrderCall;
                 GenerateConcreteSyntaxForCall(fcall, sb, indent, false, paramsStart);
                 if (funcData.HaveStatement()) {
